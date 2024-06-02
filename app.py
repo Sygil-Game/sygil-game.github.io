@@ -29,22 +29,22 @@ if "generated_words" not in st.session_state:
     st.session_state.generated_words = [[]]
 
 
-def generate_words(sets):
+def generate_words(groups):
     generated_words = [[] for _ in range(num_players)]
     for i in range(num_players):
-        for this_set in sets:
+        for group in groups:
             choices = []
             words = set()  # For deduplication
-            for wordpack in this_set["wordpacks"]:
+            for wordpack in group["wordpacks"]:
                 for word in wordpacks[wordpack]:
                     if word in words:
                         continue
                     choices.append((word, wordpack))
                     words.add(word)
             try:
-                generated_words[i] += random.sample(choices, this_set["num_words"])
+                generated_words[i] += random.sample(choices, group["num_words"])
             except ValueError:
-                st.error(f"Cannot generate {this_set['num_words']} unique words from wordpacks {this_set['wordpacks']}. Please reduce the number of words or add more wordpacks.")
+                st.error(f"Cannot generate {group['num_words']} unique words from wordpacks {group['wordpacks']}. Please reduce the number of words or add more wordpacks.")
                 return
     st.session_state.generated_words = generated_words
 
@@ -53,20 +53,20 @@ with st.container(border=True):
     cols = st.columns([1, 2, 3, 1, 2])
     cols[0].write("Players:")
     num_players = cols[1].number_input("Number of players", min_value=1, value=1, label_visibility="collapsed")
-    cols[3].write("Sets:")
-    num_sets = cols[4].number_input("Number of sets", min_value=1, value=1, label_visibility="collapsed")
+    cols[3].write("Groups:")
+    num_groups = cols[4].number_input("Number of groups", min_value=1, value=1, label_visibility="collapsed")
 
-    sets = []
-    for i in range(num_sets):
-        this_set = {}
+    groups = []
+    for i in range(num_groups):
+        group = {}
         cols = st.columns([2, 1, 6])
-        this_set["num_words"] = cols[0].number_input(f"Number of words", key=f"num_words_{i}", min_value=1, value=10, label_visibility="collapsed")
+        group["num_words"] = cols[0].number_input(f"Number of words", key=f"num_words_{i}", min_value=1, value=10, label_visibility="collapsed")
         cols[1].write(" from ")
-        this_set["wordpacks"] = cols[2].multiselect(f"Wordpacks", key=f"wordpacks_{i}", options=list(wordpacks.keys()), default=["Basic"] if i == 0 else [], label_visibility="collapsed")
-        sets.append(this_set)
+        group["wordpacks"] = cols[2].multiselect(f"Wordpacks", key=f"wordpacks_{i}", options=list(wordpacks.keys()), default=["Basic"] if i == 0 else [], label_visibility="collapsed")
+        groups.append(group)
 
     if st.button("Generate Words"):
-        generate_words(sets)
+        generate_words(groups)
 
 cols = st.columns(3)
 alphabetize = cols[0].checkbox("Alphabetize")
