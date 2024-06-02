@@ -27,22 +27,36 @@ st.write("Select which wordpacks to include and the number of words to generate:
 if "generated_words" not in st.session_state:
     st.session_state.generated_words = []
 
-def generate_words():
-    choices = [(word, wordpack) for wordpack in selected_wordpacks for word in wordpacks[wordpack]]
-    try:
-        st.session_state.generated_words = random.sample(choices, num_words)
-    except ValueError:
-        st.error(f"Cannot generate {num_words} unique words from the selected wordpacks. Please reduce the number of words or add more wordpacks.")
-    
-with st.form(key="my_form"):
-    selected_wordpacks = st.multiselect("Wordpacks:", list(wordpacks.keys()), default=["Basic"])
-    num_words = st.number_input("Number of words to generate:", min_value=1, value=10)
-    if st.form_submit_button("Generate Words"):
-        generate_words()
+def generate_words(sets):
+    st.session_state.generated_words = []
+    for this_set in sets:
+        choices = [(word, wordpack) for wordpack in this_set["wordpacks"] for word in wordpacks[wordpack]]
+        try:
+            st.session_state.generated_words += random.sample(choices, this_set["num_words"])
+        except ValueError:
+            st.error(f"Cannot generate {this_set['num_words']} unique words from wordpacks {this_set['wordpacks']}. Please reduce the number of words or add more wordpacks.")
 
-col1, col2 = st.columns(2)
-alphabetize = col1.checkbox("Alphabetize")
-do_group = col2.checkbox("Group")
+
+with st.container(border=True):
+    cols = st.columns([6, 1, 2])
+    cols[1].write("Sets:")
+    num_sets = cols[2].number_input("Number of sets", min_value=1, value=1, label_visibility="collapsed")
+
+    sets = []
+    for i in range(num_sets):
+        this_set = {}
+        cols = st.columns([2, 1, 6])
+        this_set["num_words"] = cols[0].number_input(f"Number of words", key=f"num_words_{i}", min_value=1, value=10, label_visibility="collapsed")
+        cols[1].write(" from ")
+        this_set["wordpacks"] = cols[2].multiselect(f"Wordpacks", key=f"wordpacks_{i}", options=list(wordpacks.keys()), default=["Basic"] if i == 0 else [], label_visibility="collapsed")
+        sets.append(this_set)
+
+    if st.button("Generate Words"):
+        generate_words(sets)
+
+cols = st.columns(2)
+alphabetize = cols[0].checkbox("Alphabetize")
+do_group = cols[1].checkbox("Group")
 
 display_words = st.session_state.generated_words[:]
 if alphabetize:
