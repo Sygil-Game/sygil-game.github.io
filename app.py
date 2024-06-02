@@ -18,7 +18,7 @@ for filename in os.listdir("wordpacks"):
             lines = [line.strip() for line in f.readlines()]
             if '===' in lines:
                 wordpacks[wordpack] = lines[:lines.index('===')]
-                wordpacks[f"{wordpack}+"] = lines[:lines.index('===')] + lines[lines.index('===')+1:]
+                wordpacks[f"{wordpack}+"] = lines[:lines.index('===')] + lines[lines.index('===') + 1:]
             else:
                 wordpacks[wordpack] = lines
 
@@ -28,11 +28,19 @@ st.write("Select which wordpacks to include and the number of words to generate:
 if "generated_words" not in st.session_state:
     st.session_state.generated_words = [[]]
 
+
 def generate_words(sets):
     generated_words = [[] for _ in range(num_players)]
     for i in range(num_players):
         for this_set in sets:
-            choices = [(word, wordpack) for wordpack in this_set["wordpacks"] for word in wordpacks[wordpack]]
+            choices = []
+            words = set()  # For deduplication
+            for wordpack in this_set["wordpacks"]:
+                for word in wordpacks[wordpack]:
+                    if word in words:
+                        continue
+                    choices.append((word, wordpack))
+                    words.add(word)
             try:
                 generated_words[i] += random.sample(choices, this_set["num_words"])
             except ValueError:
@@ -65,6 +73,7 @@ alphabetize = cols[0].checkbox("Alphabetize")
 one_line = cols[1].checkbox("One-line", value=True)
 do_group = cols[2].checkbox("Group by wordpack")
 
+
 def render_list(l, pre=False):
     if len(l) == 0:
         return ""
@@ -73,12 +82,13 @@ def render_list(l, pre=False):
     else:
         return "\n".join(f"* {word}" for word in l)
 
+
 for i in range(len(st.session_state.generated_words)):
     display_words = st.session_state.generated_words[i]
     if alphabetize:
         display_words = sorted(display_words)
     if len(st.session_state.generated_words) > 1:
-        st.markdown(f"### Player {i+1}")
+        st.markdown(f"### Player {i + 1}")
     if do_group:
         grouped_words = [(wordpack, [word for word, wpack in display_words if wpack == wordpack]) for wordpack, _ in sorted(wordpacks.items())]
         grouped_words = defaultdict(list)
