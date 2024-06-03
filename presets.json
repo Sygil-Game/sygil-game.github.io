@@ -1,0 +1,19 @@
+{
+    "Default": {
+        "schema_version": 1,
+        "players": [
+            {
+                "name": "",
+                "groups": [
+                    {
+                        "wordpacks": [
+                            "Basic"
+                        ],
+                        "num_words": 10
+                    }
+                ],
+                "copies": 1
+            }
+        ]
+    }
+}
