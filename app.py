@@ -303,4 +303,5 @@ if current_tab == 1:
         st.session_state.wordpack_raws[selected_wordpack] = st.session_state.modified_wordpack_raw
         parse_wordpack(selected_wordpack)
     st.text_area("Wordpack content", value=st.session_state.wordpack_raws[selected_wordpack], key="modified_wordpack_raw",
-                 height=1000, label_visibility="collapsed", on_change=update_wordpack)
+                 height=1000, label_visibility="collapsed", on_change=update_wordpack,
+                 disabled=selected_wordpack in st.session_state.default_wordpacks)
