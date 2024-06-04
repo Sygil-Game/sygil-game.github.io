@@ -12,10 +12,10 @@ from collections import defaultdict
 from copy import deepcopy
 from uuid import uuid4
 import streamlit as st
+import streamlit_antd_components as sac
 import streamlit_extras as stx
-
-# from streamlit_extras.grid import grid as st_grid
-# from streamlit_extras.stylable_container import stylable_container as
+import streamlit_extras.grid
+import streamlit_extras.stylable_container
 
 
 # Load wordpacks
@@ -39,27 +39,27 @@ if not "wordpacks" in st.session_state:
                 wordpack = os.path.splitext(filename)[0]
                 st.session_state.wordpack_raws[wordpack] = f.read()
                 parse_wordpack(wordpack)
+    st.session_state.default_wordpacks = list(st.session_state.wordpacks.keys())
 
 
 # Load presets
 with open("presets.json") as f:
     presets = json.load(f)
 
-# Helper for using icons in buttons
-# key_dict = {}
-# st.write('<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.0/css/all.min.css"/>', unsafe_allow_html=True)
 
-
-# def generate_key(icon, button_key):
-#     key_dict[button_key] = icon
-#     return {'label': button_key, 'key': button_key}
-
-
+st.set_page_config(layout='wide')
 st.title("Sygil Word Generator")
 
-tabs = st.tabs(["Generator", "Wordpacks"])
+# Streamlit's default tabs are garbage and don't preserve state across reruns.
+# This fixes that, at the cost of some flickering when switching tabs.
+if "current_tab" not in st.session_state:
+    st.session_state.current_tab = 0
+current_tab = sac.tabs(["Generator", "Wordpacks"], index=st.session_state.current_tab, return_index=True)
+if current_tab != st.session_state.current_tab:
+    st.session_state.current_tab = current_tab
+    st.rerun()
 
-with tabs[0]:
+if current_tab == 0:
     st.write("Select which wordpacks to include and the number of words to generate:")
 
     if "generator_input" not in st.session_state:
@@ -126,11 +126,7 @@ with tabs[0]:
             return generate_v1(generator_input)
         st.error(f"Unsupported generator schema version: f{generator_input['schema_version']}")
 
-    # st.button(**generate_key('<i class="fa-solid fa-circle-user fa-bounce"></i>', button_key='button_test_1'))
-    # st.button(**generate_key('<i class="fa-brands fa-youtube fa-spin-pulse"></i>', button_key='button_test_2'))
-
     # Give each player an ID for key-generating purposes (otherwise you get issues with moving Streamlit components around)
-
     def generate_player_id(): return str(uuid4())[:8]
 
     for player in st.session_state.generator_input["players"]:
@@ -261,76 +257,50 @@ with tabs[0]:
         else:
             st.markdown(render_list([word["word"] for word in words]))
 
-with tabs[1]:
-    grid = stx.grid.grid([7, 3], vertical_align="top")
+if current_tab == 1:
+    grid = stx.grid.grid([8, 1, 1], vertical_align="bottom")
     selected_wordpack = grid.selectbox("Wordpack:", key="selected_wordpack",
                                        options=[wordpack for wordpack in st.session_state.wordpacks.keys() if not wordpack.endswith("+")])
 
-    with grid.container():
-        with stx.stylable_container.stylable_container(key="wordpacks_button_styler", css_styles="""button {
-                width: 100%;
-            }"""):
+    def find_nearest_name(name):
+        if name not in st.session_state.wordpacks:
+            return name
+        results = re.search(r"^(.*) \((\d+)\)$", name)
+        if results:
+            return find_nearest_name(f"{results.group(1)} ({int(results.group(2)) + 1})")
+        else:
+            return find_nearest_name(f"{name} (2)")
 
-            def find_nearest_name(name):
-                if name not in st.session_state.wordpacks:
-                    return name
-                results = re.search(r"^(.*) \((\d+)\)$", name)
-                if results:
-                    return find_nearest_name(f"{results.group(1)} ({int(results.group(2)) + 1})")
-                else:
-                    return find_nearest_name(f"{name} (2)")
+    if grid.button("New", use_container_width=True):
+        @st.experimental_dialog("Create new wordpack")
+        def new_wordpack_dialog():
+            st.text_input("Name:", key="new_wordpack_name", value=find_nearest_name(selected_wordpack))
+            options = [wordpack for wordpack in st.session_state.wordpacks.keys() if not wordpack.endswith("+")]
+            st.selectbox("Copy from:", key="new_wordpack_copy_from",
+                         options=options, index=options.index(selected_wordpack))
+            if st.button("Create"):
+                new_name = st.session_state.new_wordpack_name
+                if new_name in st.session_state.wordpacks:
+                    st.error("A wordpack with that name already exists.")
+                    return
+                if new_name == "":
+                    st.error("Invalid name.")
+                    return
+                copy_from = st.session_state.new_wordpack_copy_from
+                st.session_state.wordpack_raws[new_name] = st.session_state.wordpack_raws[copy_from] if copy_from else ""
+                parse_wordpack(new_name)
+                st.session_state.selected_wordpack = new_name
+                st.rerun()
+        new_wordpack_dialog()
 
-            grid2 = stx.grid.grid(2, 2, vertical_align="top")
-
-            def new_wordpack_callback():
-                new_wordpack = find_nearest_name("My Wordpack")
-                st.session_state.wordpack_raws[new_wordpack] = ""
-                parse_wordpack(new_wordpack)
-                st.session_state.selected_wordpack = new_wordpack
-            grid2.button("New", on_click=new_wordpack_callback)
-
-            def copy_wordpack_callback():
-                new_wordpack = find_nearest_name(selected_wordpack)
-                st.session_state.wordpack_raws[new_wordpack] = st.session_state.wordpack_raws[selected_wordpack]
-                parse_wordpack(new_wordpack)
-                st.session_state.selected_wordpack = new_wordpack
-            grid2.button("Copy", on_click=copy_wordpack_callback)
-
-            with grid2.container():
-                with stx.stylable_container.stylable_container(key="rename_wordpack_styler", css_styles="""button > :nth-child(2) {
-                        display: none;
-                    }"""):
-                    with st.popover("Rename"):
-                        def rename_wordpack_callback():
-                            new_name = st.session_state.rename_wordpack_input
-                            st.session_state.wordpack_raws[new_name] = st.session_state.wordpack_raws[selected_wordpack]
-                            st.session_state.wordpacks[new_name] = st.session_state.wordpacks[selected_wordpack]
-                            st.session_state.selected_wordpack = new_name
-                            del st.session_state.wordpack_raws[selected_wordpack]
-                            del st.session_state.wordpacks[selected_wordpack]
-                        st.text_input("New name:", key="rename_wordpack_input", on_change=rename_wordpack_callback)
-            if grid2.button("Delete"):
-                pass
+    def delete_wordpack_callback():
+        del st.session_state.wordpack_raws[selected_wordpack]
+        del st.session_state.wordpacks[selected_wordpack]
+        st.session_state.selected_wordpack = "Basic"
+    grid.button("Delete", use_container_width=True, disabled=selected_wordpack in st.session_state.default_wordpacks, on_click=delete_wordpack_callback)
 
     def update_wordpack():
         st.session_state.wordpack_raws[selected_wordpack] = st.session_state.modified_wordpack_raw
         parse_wordpack(selected_wordpack)
     st.text_area("Wordpack content", value=st.session_state.wordpack_raws[selected_wordpack], key="modified_wordpack_raw",
                  height=1000, label_visibility="collapsed", on_change=update_wordpack)
-
-# Logic for using icons in buttons
-# icon_config = f"""
-#         <script>
-#             var elements = window.parent.document.getElementsByClassName('css-x78sv8 eqr7zpz4');
-#             let dict = {json.dumps(key_dict)};
-#             let keys = Object.keys(dict);
-#             let icons = Object.values(dict);
-#             for (var i = 0; i < elements.length; ++i) {{
-#                 for (var j = 0; j < keys.length; ++j){{
-#                     if (elements[i].innerText == keys[j])
-#                     elements[i].innerHTML = icons[j];
-#                 }}
-#             }}
-#         </script>
-#         """
-# components.html(f"{icon_config}", height=0, width=0)
