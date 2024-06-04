@@ -6,12 +6,16 @@ It loads in one or more wordpacks, allows you to select which ones to include, a
 import json
 import os
 import random
+import re
 import textwrap
 from collections import defaultdict
 from copy import deepcopy
 from uuid import uuid4
 import streamlit as st
-from streamlit_extras.grid import grid as st_grid
+import streamlit_extras as stx
+
+# from streamlit_extras.grid import grid as st_grid
+# from streamlit_extras.stylable_container import stylable_container as
 
 
 # Load wordpacks
@@ -150,9 +154,9 @@ with tabs[0]:
                 # Player name on left, buttons (up/down/clone/delete) on right
                 if is_advanced:
                     with st.container():
-                        grid = st_grid([10, 4, 1, 1, 1, 1], vertical_align="center")
+                        grid = stx.grid.grid([10, 4, 1, 1, 1, 1], vertical_align="center")
                         player["name"] = grid.text_input("Name", key=f"name_player-{player['id']}",
-                                                            value=player["name"], placeholder=f"Player {player_i + 1}", label_visibility="collapsed")
+                                                         value=player["name"], placeholder=f"Player {player_i + 1}", label_visibility="collapsed")
                         grid.empty()
                         if grid.button("↑", key=f"up_button_player-{player['id']}", disabled=player_i == 0):
                             players.pop(player_i)
@@ -178,7 +182,7 @@ with tabs[0]:
                             st.rerun()
 
                 groups = []
-                grid = st_grid(*[[4, 2, 12]] + [[4, 2, 11, 1]] * (len(player["groups"]) - 1), vertical_align="center")
+                grid = stx.grid.grid(*[[4, 2, 12]] + [[4, 2, 11, 1]] * (len(player["groups"]) - 1), vertical_align="center")
                 for group_i, group in enumerate(player["groups"]):
                     group_values = {}
                     group_values["num_words"] = grid.number_input("Number of words", key=f"num_words_player-{player['id']}_group{group_i}",
@@ -197,10 +201,10 @@ with tabs[0]:
 
                 if is_advanced:
                     st.html('<hr style="margin: 0;" />')
-                    grid = st_grid([1, 6, 12, 4], vertical_align="center")
+                    grid = stx.grid.grid([1, 6, 12, 4], vertical_align="center")
                     grid.text("X")
                     player["copies"] = grid.number_input("Copies", key=f"copies_player-{player['id']}",
-                                                            min_value=1, value=None, placeholder="Copies...", label_visibility="collapsed") \
+                                                         min_value=1, value=None, placeholder="Copies...", label_visibility="collapsed") \
                         or 1
                     grid.empty()
                     if grid.button("Add group", key=f"group_add_button_player-{player['id']}"):
@@ -258,7 +262,55 @@ with tabs[0]:
             st.markdown(render_list([word["word"] for word in words]))
 
 with tabs[1]:
-    selected_wordpack = st.selectbox("Wordpack:", [wordpack for wordpack in st.session_state.wordpacks.keys() if not wordpack.endswith("+")])
+    grid = stx.grid.grid([7, 3], vertical_align="top")
+    selected_wordpack = grid.selectbox("Wordpack:", key="selected_wordpack",
+                                       options=[wordpack for wordpack in st.session_state.wordpacks.keys() if not wordpack.endswith("+")])
+
+    with grid.container():
+        with stx.stylable_container.stylable_container(key="wordpacks_button_styler", css_styles="""button {
+                width: 100%;
+            }"""):
+
+            def find_nearest_name(name):
+                if name not in st.session_state.wordpacks:
+                    return name
+                results = re.search(r"^(.*) \((\d+)\)$", name)
+                if results:
+                    return find_nearest_name(f"{results.group(1)} ({int(results.group(2)) + 1})")
+                else:
+                    return find_nearest_name(f"{name} (2)")
+
+            grid2 = stx.grid.grid(2, 2, vertical_align="top")
+
+            def new_wordpack_callback():
+                new_wordpack = find_nearest_name("My Wordpack")
+                st.session_state.wordpack_raws[new_wordpack] = ""
+                parse_wordpack(new_wordpack)
+                st.session_state.selected_wordpack = new_wordpack
+            grid2.button("New", on_click=new_wordpack_callback)
+
+            def copy_wordpack_callback():
+                new_wordpack = find_nearest_name(selected_wordpack)
+                st.session_state.wordpack_raws[new_wordpack] = st.session_state.wordpack_raws[selected_wordpack]
+                parse_wordpack(new_wordpack)
+                st.session_state.selected_wordpack = new_wordpack
+            grid2.button("Copy", on_click=copy_wordpack_callback)
+
+            with grid2.container():
+                with stx.stylable_container.stylable_container(key="rename_wordpack_styler", css_styles="""button > :nth-child(2) {
+                        display: none;
+                    }"""):
+                    with st.popover("Rename"):
+                        def rename_wordpack_callback():
+                            new_name = st.session_state.rename_wordpack_input
+                            st.session_state.wordpack_raws[new_name] = st.session_state.wordpack_raws[selected_wordpack]
+                            st.session_state.wordpacks[new_name] = st.session_state.wordpacks[selected_wordpack]
+                            st.session_state.selected_wordpack = new_name
+                            del st.session_state.wordpack_raws[selected_wordpack]
+                            del st.session_state.wordpacks[selected_wordpack]
+                        st.text_input("New name:", key="rename_wordpack_input", on_change=rename_wordpack_callback)
+            if grid2.button("Delete"):
+                pass
 
     def update_wordpack():
         st.session_state.wordpack_raws[selected_wordpack] = st.session_state.modified_wordpack_raw
