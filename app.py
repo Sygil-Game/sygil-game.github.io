@@ -12,6 +12,7 @@ from collections import defaultdict
 from copy import deepcopy
 from uuid import uuid4
 import streamlit as st
+import streamlit.components.v1 as components
 import streamlit_antd_components as sac
 import streamlit_extras as stx
 import streamlit_extras.grid
@@ -58,6 +59,18 @@ current_tab = sac.tabs(["Generator", "Wordpacks"], index=st.session_state.curren
 if current_tab != st.session_state.current_tab:
     st.session_state.current_tab = current_tab
     st.rerun()
+
+# A helper for adding font-awesome icons to buttons
+font_awesome_link_tag = """<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" integrity="sha512-SnH5WK+bZxgPHs44uWIX+LLJAJ9/2PkPKZ5QiAj6Ta86w+fsb2TkcmfRyVX3pBnMFcV7oQPJkl9QevSCWr3W6A==" crossorigin="anonymous" referrerpolicy="no-referrer" />"""
+st.write(font_awesome_link_tag, unsafe_allow_html=True)
+
+
+def fa_button(fa_classes, label, key, *args, parent=st, **kwargs):
+    with parent.container():
+        st.button(label, key, *args, **kwargs)
+        with stx.stylable_container.stylable_container(key=f"fa_button_styler-{key}", css_styles="""{ display: none }"""):
+            components.html(f"""<script>window.frameElement.parentElement.parentElement.parentElement.parentElement.previousSibling.querySelector("button").innerHTML = '<i class="{fa_classes}"></i>';</script>""")
+
 
 if current_tab == 0:
     st.write("Select which wordpacks to include and the number of words to generate:")
@@ -164,7 +177,7 @@ if current_tab == 0:
                             players.insert(player_i + 1, player)
                             st.session_state.generator_input["players"] = players
                             st.rerun()
-                        if grid.button("C", key=f"clone_button_player-{player['id']}"):
+                        if fa_button("fa-regular fa-copy", "C", key=f"clone_button_player-{player['id']}", parent=grid):
                             copy = deepcopy(player)
                             if copy["name"]:
                                 copy["name"] += " (copy)"
