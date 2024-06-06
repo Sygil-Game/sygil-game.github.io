@@ -49,6 +49,7 @@ with open("presets.json") as f:
 # Helper for making stable keys that won't be automatically cleaned up.
 # Streamlit's "magic" cleans up the session_state of any widgets which are not loaded on even a single re-run,
 # but if we edit them at all manually (such as by setting them equal to themselves) it leaves them alone.
+# Make sure to set appropriate default values - many widgets are not happy with None.
 # See here for details: https://docs.streamlit.io/develop/concepts/architecture/widget-behavior
 def _stable(key, default):
     st.session_state[key] = st.session_state.get(key, default)
@@ -240,11 +241,14 @@ if st.session_state["current_tab"] == 0:
             st.session_state.generator_input["players"] = players
             st.session_state.generator_output = generate(st.session_state.generator_input) or st.session_state.generator_output  # Maintain state if error during generation
 
-    # if len(st.session_state.generator_output or []) > 0:
-    cols = st.columns(3)
-    alphabetize = cols[0].checkbox("Alphabetize")
-    one_line = cols[1].checkbox("One-line", value=True)
-    do_group = cols[2].checkbox("Group by wordpack")
+    stable("alphabetize", default=False)
+    stable("one_line", default=True)
+    stable("do_group", default=False)
+    if len(st.session_state.generator_output) > 0:
+        cols = st.columns(3)
+        alphabetize = cols[0].checkbox("Alphabetize", key="alphabetize")
+        one_line = cols[1].checkbox("One-line", key="one_line")
+        do_group = cols[2].checkbox("Group by wordpack", key="do_group")
 
     def render_list(l, pre=False):
         if len(l) == 0:
@@ -254,7 +258,7 @@ if st.session_state["current_tab"] == 0:
         else:
             return "\n".join(f"* {word}" for word in l)
 
-    for player_i, player in enumerate(st.session_state.generator_output or []):
+    for player_i, player in enumerate(st.session_state.generator_output):
         words = player["words"]
         if alphabetize:
             words = sorted(words, key=lambda w: w["word"])
