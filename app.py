@@ -18,27 +18,28 @@ import streamlit_extras as stx
 import streamlit_extras.grid
 import streamlit_extras.stylable_container
 
+s = st.session_state  # Shorthand
 
 # Load wordpacks
 def parse_wordpack(wordpack):
-    lines = [line.strip() for line in st.session_state.wordpack_raws[wordpack].split("\n")]
+    lines = [line.strip() for line in s["wordpack_raws"][wordpack].split("\n")]
     lines = [line for line in lines if line]
     if '===' in lines:
-        st.session_state.wordpacks[wordpack] = lines[:lines.index('===')]
-        st.session_state.wordpacks[f"{wordpack}+"] = lines[:lines.index('===')] + lines[lines.index('===') + 1:]
+        s["wordpacks"][wordpack] = lines[:lines.index('===')]
+        s["wordpacks"][f"{wordpack}+"] = lines[:lines.index('===')] + lines[lines.index('===') + 1:]
     else:
-        st.session_state.wordpacks[wordpack] = lines
-if not "wordpacks" in st.session_state:
-    st.session_state.wordpacks = {}
-    st.session_state.wordpack_raws = {}
+        s["wordpacks"][wordpack] = lines
+if not "wordpacks" in s:
+    s["wordpacks"] = {}
+    s["wordpack_raws"] = {}
 
     for filename in os.listdir("wordpacks"):
         if filename.endswith(".txt"):
             with open(os.path.join("wordpacks", filename), 'r') as f:
                 wordpack = os.path.splitext(filename)[0]
-                st.session_state.wordpack_raws[wordpack] = f.read()
+                s["wordpack_raws"][wordpack] = f.read()
                 parse_wordpack(wordpack)
-    st.session_state.default_wordpacks = list(st.session_state.wordpacks.keys())
+    s["default_wordpacks"] = list(s["wordpacks"].keys())
 
 
 # Load presets
@@ -52,7 +53,7 @@ with open("presets.json") as f:
 # Make sure to set appropriate default values - many widgets are not happy with None.
 # See here for details: https://docs.streamlit.io/develop/concepts/architecture/widget-behavior
 def _stable(key, default):
-    st.session_state[key] = st.session_state.get(key, default)
+    st.session_state[key] = st.session_state[key] if key in st.session_state else default  # We don't use .get in case "get" is a key of session_state
     return key
 _stable("stable_keys", set())
 def stable(key, default=None):
@@ -72,9 +73,9 @@ stable("generator_output", default=[])
 # Streamlit's default tabs are garbage and don't preserve state across reruns. This fixes that.
 # Argument order matters! "stable" must be called before the session_state for index= is read.
 sac.tabs(["Generator", "Wordpacks"], key=stable("current_tab", default=0),
-         return_index=True, index=st.session_state["current_tab"])
+         return_index=True, index=s["current_tab"])
 
-if st.session_state["current_tab"] == 0:
+if s["current_tab"] == 0:
     st.write("Select which wordpacks to include and the number of words to generate:")
 
     # generator_input schema:
@@ -116,7 +117,7 @@ if st.session_state["current_tab"] == 0:
                     choices = []
                     words = set()  # For deduplication
                     for wordpack in group["wordpacks"]:
-                        for word in st.session_state.wordpacks[wordpack]:
+                        for word in s["wordpacks"][wordpack]:
                             if word in words or word in player_output["words"]:
                                 continue
                             choices.append({"word": word, "wordpack_origin": wordpack, "group_origin": group_i})
@@ -139,25 +140,25 @@ if st.session_state["current_tab"] == 0:
     # Give each player an ID for key-generating purposes (otherwise you get issues with moving Streamlit components around)
     def generate_player_id(): return str(uuid4())[:8]
 
-    for player in st.session_state["generator_input"]["players"]:
+    for player in s["generator_input"]["players"]:
         if "id" not in player:
             player["id"] = generate_player_id()
 
     with st.container(border=True):
-        players = deepcopy(st.session_state["generator_input"]["players"])  # Deepcopy so we don't lose data if something errors along the way
+        players = deepcopy(s["generator_input"]["players"])  # Deepcopy so we don't lose data if something errors along the way
 
         cols = st.columns([13, 3])
         cols[1].toggle("Advanced", key="is_advanced", help="Can't be disabled if you're using any advanced features.",
                        value=len(players) > 1 or len(players[0]["groups"]) > 1 or players[0]["copies"] > 1)
-        if not st.session_state["is_advanced"] and len(players) > 1:
+        if not s["is_advanced"] and len(players) > 1:
             players = players[:1]
-            st.session_state["generator_input"]["players"] = players
+            s["generator_input"]["players"] = players
             st.rerun()
 
         for player_i, player in enumerate(players):
             with st.container(border=True):
                 # Player name on left, buttons (up/down/clone/delete) on right
-                if st.session_state["is_advanced"]:
+                if s["is_advanced"]:
                     with st.container():
                         grid = stx.grid.grid([10, 4, 1, 1, 1, 1], vertical_align="center")
                         player["name"] = grid.text_input("Name", key=f"name_player-{player['id']}",
@@ -166,12 +167,12 @@ if st.session_state["current_tab"] == 0:
                         if grid.button("↑", key=f"up_button_player-{player['id']}", disabled=player_i == 0):
                             players.pop(player_i)
                             players.insert(player_i - 1, player)
-                            st.session_state.generator_input["players"] = players
+                            s["generator_input"]["players"] = players
                             st.rerun()
-                        if grid.button("↓", key=f"down_button_player-{player['id']}", disabled=player_i == len(st.session_state.generator_input["players"]) - 1):
+                        if grid.button("↓", key=f"down_button_player-{player['id']}", disabled=player_i == len(s["generator_input"]["players"]) - 1):
                             players.pop(player_i)
                             players.insert(player_i + 1, player)
-                            st.session_state.generator_input["players"] = players
+                            s["generator_input"]["players"] = players
                             st.rerun()
                         if grid.button('<i class="fa-regular fa-copy"></i>', key=f"clone_button_player-{player['id']}"):
                             copy = deepcopy(player)
@@ -179,11 +180,11 @@ if st.session_state["current_tab"] == 0:
                                 copy["name"] += " (copy)"
                             copy["id"] = generate_player_id()
                             players.insert(player_i + 1, copy)
-                            st.session_state.generator_input["players"] = players
+                            s["generator_input"]["players"] = players
                             st.rerun()
                         if grid.button("\\-", key=f"delete_button_player-{player['id']}", disabled=len(players) == 1):
                             players.pop(player_i)
-                            st.session_state.generator_input["players"] = players
+                            s["generator_input"]["players"] = players
                             st.rerun()
 
                 groups = []
@@ -194,19 +195,19 @@ if st.session_state["current_tab"] == 0:
                     grid.number_input("Number of words", min_value=1, label_visibility="collapsed",
                                       key=stable(f"GI_num_words_{PGID}", default=group["num_words"]))
                     grid.write(" from ")
-                    grid.multiselect("Wordpacks", options=list(st.session_state["wordpacks"].keys()),
+                    grid.multiselect("Wordpacks", options=list(s["wordpacks"].keys()),
                                      label_visibility="collapsed", placeholder="Choose wordpacks...",
                                      key=stable(f"GI_wordpacks_{PGID}", default=group["wordpacks"]))
-                    groups.append({"num_words": st.session_state[f"GI_num_words_{PGID}"],
-                                   "wordpacks": st.session_state[f"GI_wordpacks_{PGID}"]})
+                    groups.append({"num_words": s[f"GI_num_words_{PGID}"],
+                                   "wordpacks": s[f"GI_wordpacks_{PGID}"]})
                     if group_i > 0:
                         def delete_player_group(player_i, group_i):  # Using a callback prevents group_i reuse from causing issues
                             players[player_i]["groups"].pop(group_i)
-                            st.session_state.generator_input["players"] = players
+                            s["generator_input"]["players"] = players
                         grid.button("\\-", key=f"group_delete_button_{PGID}", on_click=delete_player_group, args=[player_i, group_i])
                 player["groups"] = groups
 
-                if st.session_state["is_advanced"]:
+                if s["is_advanced"]:
                     st.html('<hr style="margin: 0;" />')
                     grid = stx.grid.grid([1, 6, 12, 4], vertical_align="center")
                     grid.text("X")
@@ -217,19 +218,19 @@ if st.session_state["current_tab"] == 0:
                     if grid.button("Add group", key=f"group_add_button_player-{player['id']}"):
                         groups.append({"wordpacks": [], "num_words": 1})
                         player["groups"] = groups
-                        st.session_state.generator_input["players"] = players
+                        s["generator_input"]["players"] = players
                         st.rerun()
                 else:
                     if player["copies"] != 1 or len(player["groups"]) > 1:
                         player["copies"] = 1
                         player["groups"] = player["groups"][:1]
-                        st.session_state.generator_input["players"] = players
+                        s["generator_input"]["players"] = players
                         st.rerun()
 
-        if st.session_state["is_advanced"]:
+        if s["is_advanced"]:
             cols = st.columns([18, 4])
             if cols[1].button("Add player"):
-                st.session_state.generator_input["players"].append({
+                s["generator_input"]["players"].append({
                     "name": None,
                     "groups": [{"wordpacks": [], "num_words": 1}],
                     "copies": 1,
@@ -238,13 +239,13 @@ if st.session_state["current_tab"] == 0:
                 st.rerun()
 
         if st.button("Generate", type="primary"):
-            st.session_state.generator_input["players"] = players
-            st.session_state.generator_output = generate(st.session_state.generator_input) or st.session_state.generator_output  # Maintain state if error during generation
+            s["generator_input"]["players"] = players
+            s["generator_output"] = generate(s["generator_input"]) or s["generator_output"]  # Maintain state if error during generation
 
     stable("alphabetize", default=False)
     stable("one_line", default=True)
     stable("do_group", default=False)
-    if len(st.session_state.generator_output) > 0:
+    if len(s["generator_output"]) > 0:
         cols = st.columns(3)
         alphabetize = cols[0].checkbox("Alphabetize", key="alphabetize")
         one_line = cols[1].checkbox("One-line", key="one_line")
@@ -258,11 +259,11 @@ if st.session_state["current_tab"] == 0:
         else:
             return "\n".join(f"* {word}" for word in l)
 
-    for player_i, player in enumerate(st.session_state.generator_output):
+    for player_i, player in enumerate(s["generator_output"]):
         words = player["words"]
         if alphabetize:
             words = sorted(words, key=lambda w: w["word"])
-        if len(st.session_state.generator_output) > 1:
+        if len(s["generator_output"]) > 1:
             st.markdown("### " + player["name"])
         if do_group:
             grouped_words = defaultdict(list)
@@ -272,13 +273,13 @@ if st.session_state["current_tab"] == 0:
         else:
             st.markdown(render_list([word["word"] for word in words]))
 
-if st.session_state["current_tab"] == 1:
+if s["current_tab"] == 1:
     grid = stx.grid.grid([8, 1, 1], vertical_align="bottom")
     selected_wordpack = grid.selectbox("Wordpack:", key="selected_wordpack",
-                                       options=[wordpack for wordpack in st.session_state.wordpacks.keys() if not wordpack.endswith("+")])
+                                       options=[wordpack for wordpack in s["wordpacks"].keys() if not wordpack.endswith("+")])
 
     def find_nearest_name(name):
-        if name not in st.session_state.wordpacks:
+        if name not in s["wordpacks"]:
             return name
         results = re.search(r"^(.*) \((\d+)\)$", name)
         if results:
@@ -290,37 +291,37 @@ if st.session_state["current_tab"] == 1:
         @st.experimental_dialog("Create new wordpack")
         def new_wordpack_dialog():
             st.text_input("Name:", key="new_wordpack_name", value=find_nearest_name(selected_wordpack))
-            options = [wordpack for wordpack in st.session_state.wordpacks.keys() if not wordpack.endswith("+")]
+            options = [wordpack for wordpack in s["wordpacks"].keys() if not wordpack.endswith("+")]
             st.selectbox("Copy from:", key="new_wordpack_copy_from",
                          options=options, index=options.index(selected_wordpack))
             if st.button("Create"):
-                new_name = st.session_state.new_wordpack_name
-                if new_name in st.session_state.wordpacks:
+                new_name = s["new_wordpack_name"]
+                if new_name in s["wordpacks"]:
                     st.error("A wordpack with that name already exists.")
                     return
                 if new_name == "":
                     st.error("Invalid name.")
                     return
-                copy_from = st.session_state.new_wordpack_copy_from
-                st.session_state.wordpack_raws[new_name] = st.session_state.wordpack_raws[copy_from] if copy_from else ""
+                copy_from = s["new_wordpack_copy_from"]
+                s["wordpack_raws"][new_name] = s["wordpack_raws"][copy_from] if copy_from else ""
                 parse_wordpack(new_name)
-                st.session_state.selected_wordpack = new_name
+                s["selected_wordpack"] = new_name
                 st.rerun()
         new_wordpack_dialog()
 
     def delete_wordpack_callback():
-        del st.session_state.wordpack_raws[selected_wordpack]
-        del st.session_state.wordpacks[selected_wordpack]
-        st.session_state.selected_wordpack = "Basic"
+        del s["wordpack_raws"][selected_wordpack]
+        del s["wordpacks"][selected_wordpack]
+        s["selected_wordpack"] = "Basic"
     grid.button('<span><i class="fa-solid fa-trash"></i> Delete</span>', use_container_width=True,
-                disabled=selected_wordpack in st.session_state.default_wordpacks, on_click=delete_wordpack_callback)
+                disabled=selected_wordpack in s["default_wordpacks"], on_click=delete_wordpack_callback)
 
     def update_wordpack():
-        st.session_state.wordpack_raws[selected_wordpack] = st.session_state.modified_wordpack_raw
+        s["wordpack_raws"][selected_wordpack] = s["modified_wordpack_raw"]
         parse_wordpack(selected_wordpack)
-    st.text_area("Wordpack content", value=st.session_state.wordpack_raws[selected_wordpack], key="modified_wordpack_raw",
+    st.text_area("Wordpack content", value=s["wordpack_raws"][selected_wordpack], key="modified_wordpack_raw",
                  height=1000, label_visibility="collapsed", on_change=update_wordpack,
-                 disabled=selected_wordpack in st.session_state.default_wordpacks)
+                 disabled=selected_wordpack in s["default_wordpacks"])
 
 
 # Make all buttons on the page HTML buttons (if they start with <)
