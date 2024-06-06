@@ -188,7 +188,7 @@ if st.session_state["current_tab"] == 0:
                             players.insert(player_i + 1, copy)
                             st.session_state.generator_input["players"] = players
                             st.rerun()
-                        if grid.button("\\-", key=f"delete_button_player-{player['id']}"):
+                        if grid.button("\\-", key=f"delete_button_player-{player['id']}", disabled=len(players) == 1):
                             players.pop(player_i)
                             st.session_state.generator_input["players"] = players
                             st.rerun()
@@ -239,6 +239,7 @@ if st.session_state["current_tab"] == 0:
                 st.session_state.generator_input["players"].append({
                     "name": None,
                     "groups": [{"wordpacks": [], "num_words": 1}],
+                    "copies": 1,
                     "id": generate_player_id()
                 })
                 st.rerun()
