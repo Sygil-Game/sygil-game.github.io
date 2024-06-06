@@ -61,18 +61,10 @@ def stable(key, default=None):
 for key in st.session_state["stable_keys"]:
     st.session_state[key] = st.session_state[key]
 
-# A helper for adding font-awesome icons to buttons
-font_awesome_link_tag = """<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" integrity="sha512-SnH5WK+bZxgPHs44uWIX+LLJAJ9/2PkPKZ5QiAj6Ta86w+fsb2TkcmfRyVX3pBnMFcV7oQPJkl9QevSCWr3W6A==" crossorigin="anonymous" referrerpolicy="no-referrer" />"""
-st.write(font_awesome_link_tag, unsafe_allow_html=True)
 
 st.set_page_config(layout='wide')
 st.title("Sygil Word Generator")
 
-def fa_button(fa_classes, label, key, *args, parent=st, **kwargs):
-    with parent.container():
-        st.button(label, key, *args, **kwargs)
-        with stx.stylable_container.stylable_container(key=f"fa_button_styler-{key}", css_styles="""{ display: none }"""):
-            components.html(f"""<script>window.frameElement.parentElement.parentElement.parentElement.parentElement.previousSibling.querySelector("button").innerHTML = '<i class="{fa_classes}"></i>';</script>""")
 stable("generator_input", default=presets["Default"])
 stable("generator_output", default=[])
 
@@ -180,7 +172,7 @@ if st.session_state["current_tab"] == 0:
                             players.insert(player_i + 1, player)
                             st.session_state.generator_input["players"] = players
                             st.rerun()
-                        if fa_button("fa-regular fa-copy", "C", key=f"clone_button_player-{player['id']}", parent=grid):
+                        if grid.button('<i class="fa-regular fa-copy"></i>', key=f"clone_button_player-{player['id']}"):
                             copy = deepcopy(player)
                             if copy["name"]:
                                 copy["name"] += " (copy)"
@@ -316,7 +308,8 @@ if st.session_state["current_tab"] == 1:
         del st.session_state.wordpack_raws[selected_wordpack]
         del st.session_state.wordpacks[selected_wordpack]
         st.session_state.selected_wordpack = "Basic"
-    grid.button("Delete", use_container_width=True, disabled=selected_wordpack in st.session_state.default_wordpacks, on_click=delete_wordpack_callback)
+    grid.button('<span><i class="fa-solid fa-trash"></i> Delete</span>', use_container_width=True,
+                disabled=selected_wordpack in st.session_state.default_wordpacks, on_click=delete_wordpack_callback)
 
     def update_wordpack():
         st.session_state.wordpack_raws[selected_wordpack] = st.session_state.modified_wordpack_raw
@@ -324,3 +317,26 @@ if st.session_state["current_tab"] == 1:
     st.text_area("Wordpack content", value=st.session_state.wordpack_raws[selected_wordpack], key="modified_wordpack_raw",
                  height=1000, label_visibility="collapsed", on_change=update_wordpack,
                  disabled=selected_wordpack in st.session_state.default_wordpacks)
+
+
+# Make all buttons on the page HTML buttons (if they start with <)
+# Must be run after all buttons are created
+# Unfortunately introduces a brief render delay
+with stx.stylable_container.stylable_container(key=f"button_js_styler", css_styles="""{ display: none }"""):
+    components.html("""<script>
+    window.parent.document.head.insertAdjacentHTML('beforeend', '<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" integrity="sha512-SnH5WK+bZxgPHs44uWIX+LLJAJ9/2PkPKZ5QiAj6Ta86w+fsb2TkcmfRyVX3pBnMFcV7oQPJkl9QevSCWr3W6A==" crossorigin="anonymous" referrerpolicy="no-referrer" />');
+    function updateButton(el) {
+        if (el.innerText.startsWith("<")) el.innerHTML = el.innerText
+    }
+    const observer = new MutationObserver((mutations) => {
+        mutations.forEach((mutation) => {
+            mutation.addedNodes.forEach((node) => {
+                if (node.nodeType === Node.ELEMENT_NODE) {
+                    node.querySelectorAll(".stButton button").forEach(updateButton)
+                }
+            });
+        });
+    });
+    observer.observe(window.parent.document.body, { childList: true, subtree: true });
+    window.parent.document.querySelectorAll(".stButton button").forEach(updateButton);
+</script>""")
