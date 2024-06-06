@@ -66,17 +66,143 @@ for key in st.session_state["stable_keys"]:
 
 
 st.set_page_config(layout='wide')
-st.title("Sygil Word Generator")
+st.title("Sygil")
 
-stable("generator_input", default=presets["Default"])
-stable("generator_output", default=[])
+# Order query params to place certain params first (in the order given)
+query_params_order = ["tab"]
+st.query_params.from_dict({k: st.query_params[k] for k in
+                           [k2 for k2 in query_params_order if k2 in st.query_params] +
+                           [k3 for k3 in st.query_params.keys() if k3 not in query_params_order]})
 
-# Streamlit's default tabs are garbage and don't preserve state across reruns. This fixes that.
-# Argument order matters! "stable" must be called before the session_state for index= is read.
-sac.tabs(["Generator", "Wordpacks"], key=stable("current_tab", default=0),
-         return_index=True, index=s["current_tab"])
 
-if s["current_tab"] == 0:
+def load_from_url(key, default, parse_json=True):
+    if key in st.query_params:
+        try:
+            value = st.query_params[key]
+            if parse_json:
+                value = json.loads(value)
+            return value
+        except json.JSONDecodeError:
+            st.error(f'Invalid JSON provided for "{key}" in URL.')
+            return default
+    return default
+
+# Streamlit's default tabs are garbage and don't preserve state across reruns.
+# This fixes that and also syncs the tab state up with a URL param.
+# The first tab is the default and won't appear in the URL.
+tabs = ["Rules", "DM", "Generator", "Wordpacks"]
+default_tab = load_from_url("tab", tabs[0], parse_json=False)
+if default_tab not in tabs:
+    default_tab = tabs[0]
+stable("tab", default=default_tab)
+selected_tab = sac.tabs(tabs, key="tab", index=tabs.index(s["tab"]))
+if selected_tab == tabs[0]:
+    if "tab" in st.query_params:
+        del st.query_params["tab"]
+else:
+    st.query_params["tab"] = selected_tab
+
+# Intialize generator_input and generator_output and load them from the URL if present
+stable("generator_input", default=load_from_url("generator_input", presets["Default"]))
+stable("generator_output", default=load_from_url("generator_output", []))
+
+
+if s["tab"] == "Rules":
+    st.markdown("""**Sygil** is a magic system that lets magic be the way it was meant to be - overpowered, creative, and **LIMITLESS**.
+
+As a player, you'll get a set of Sygils from your DM, for example: `Water`, `Heavy`, `Wood`, `Hot`  
+Sygils are power words that can be combined to cast spells. To cast a spell, choose any two Sygils and combine them using the verb "is":  
+`Wood is Water` - *The wooden door blocking your path turns into a puddle.*
+
+You can direct the general interpretation of your spell if it is ambiguous. `Hot is Heavy` could mean  
+*The hot cauldron in front of you becomes extremely heavy and punches a hole in the floor.*  
+Or: *The heat coming from the cauldron becomes heavier and more intense.* (Or both!)  
+Your DM has final say on the outcome of spell and whether an interpretation is reasonable or not.
+
+Once you cast a spell, you can't cast it again that day, though you can use the same Sygils for new spells.  
+You always have the special Sygil `That`, which can only be used as the first Sygil in a spell:  
+`That is Wood` - *The guard you're pointing at turns into a tree.*
+
+The power of your spells is **LIMITLESS**. Be careful how you use them.  
+`Water is Hot` - *You decide to boil the entire ocean for fun. The resulting steam explosion instantly kills every creature on the planet (including you).*
+
+At the end of each day you'll get an all new set of Sygils to replace your current ones.  
+Don't be stingy with your spells! The more spells you cast, the more your power will grow, granting you more Sygils per day, signature Sygils, special Sygils, and more.
+
+Now go show the world what magic can really do.""")
+
+if s["tab"] == "DM":
+    st.markdown("""
+### Quick-start
+
+Read the player rules. Then go to the Generator tab and use the default settings to generate a set of Sygils for each player.  
+Suggested first adventure:
+
+> Deep in the bowels of a hidden temple, the special Sygil `All` is resting, with the power to make one spell permanent and universal.  
+> E.g. `All Metal is Round` would make all metal forcibly reshape itself into balls forevermore.  
+> This Sygil is too dangerous to be allowed to fall into the wrong hands. Find it.
+
+### When should I use Sygil?
+
+**Sygil** intentionally makes magic incredibly overpowered. Magic is supposed to be **LIMITLESS** and almighty, and if you want to use **Sygil** in your game you'll need to embrace that.  
+You can use **Sygil** alongside any other RPG or by itself. It's best suited for open-ended games without a pre-planned narrative.  
+You should not use **Sygil** if you have a specific story you want to tell, such as a mystery. Railroading doesn't work when the players can turn the rails into soup.  
+Don't try to use **Sygil** for only some of your players (like only giving it to the wizard but not the warrior) - it will make other players feel weak.
+
+### Creating Sygil sets
+ 
+You'll need to give each player a set of Sygils at the start of the game. It's recommended to start off with 10 per player.  
+You can use the Generator tab to automatically generate a set of Sygils. You can turn on advanced mode and set a number of "copies" to generate sets for many players at once.  
+The Generator will randomly choose Sygils from a default wordpack. If you want, you can use more wordpacks or create your own.  
+
+### Making Sygil work in your game
+
+General:
+- Let players be strong! That's the whole point.
+- Think through what indirect consequences spells might have. `Mountain is Gold` might devastate a kingdom's economy and `Ground is Soft` might cause nearby buildings to start collapsing.
+- Have each player keep track of the spells they've cast by writing them down.
+- Reward creativity. If players come up with a really cool spell, have it work out in their favor. You can even give out explicit rewards like bonus Sygils.
+- Don't punish players for experimenting! The more spells your players cast the more interesting and fun the game will be.
+- You get final say on whether an interpretation works and what a spell ends up doing.
+- If a player's spell will have a disastrous outcome (like `Bridge is Sand` plummeting them to their deaths), warn them, either in-character as a premonition or out-of-character.
+- If you feel like spells are too strong or too weak, the problem is usually your wordpack. Sygils that allow targeting enemies directly (e.g. `Heart`) are very strong. Sygils that are very specific (e.g. `Necklace`) are very weak.
+
+Players:
+- If players are dying too much, give them multiple lives or resistance/immunity to direct magic.
+- If some players are overshadowing others, make things turn-based and allow each player to cast only one spell per turn.
+- Don't allow PvP. **Sygil** is not balanced around players being on the receiving end. This is best done by simply talking to your players about it out-of-character.
+- Players may quickly run out of useful spells, especially if you gave them a small number of Sygils. If this happens, you can give them consumable items that reroll or refresh one of their Sygils.
+- It can be fun to require players to shout their spells out loud.
+
+Enemies:
+- Expect most enemies to be defeated in a single spell. Use groups of enemies and multiple encounters to keep things interesting.
+- Don't give enemies access to Sygils unless you really know what you're doing - they'll probably instakill your players. Let the players be special users of Sygil magic.
+- If you want a boss enemy to last more than a few seconds, give them multiple lives or resistance/immunity to direct magic.
+- It's easy to destroy with Sygils, but other problems require more creativity. Finding things, interrogating enemies, inflitrating - if you feel like things are too easy, give players challenges other than direct combat.
+
+### Progression
+
+As players become accustomed to **Sygil**, you can introduce new abilities and mechanics.  
+Most obviously, you can increase the number of Sygils or use more niche wordpacks once players are creative enough to find ways to use weirder Sygils.  
+`That` is a very powerful training Sygil meant to make it easier for players to cast spells in any context; more experienced players might not need it.  
+To introduce stronger themes to certain sessions and more variety between sessions, you can give players access to one or more temporary Sygils based on the environment they're in (e.g. everyone can use `Tree` when in the haunted forest).  
+Here are some other ideas. These can be level-up rewards for specific players or new mechanics that become accessible to everyone.
+- Signature Sygil: the player picks one Sygil they've used before to keep forever. (Let them swap this if they feel like they're stuck with something bad.)
+- Overchannel: the player can recast a spell they've cast before, at the cost of losing of the Sygils used.
+- Magic Shield: after casting any spell, the player gets a magical shield that absorbs one attack in the next 5 minutes. Good if your players need more defenses or aren't casting enough spells.
+- Special Sygils: the player permanently gains a special Sygil. Examples:
+    - `Not` - e.g. `Water is Not Hot`
+    - `I` - e.g. `I is Fast` (you may want to restrict this to only being the first Sygil of a spell)
+    - `Shield` - e.g. `Water is Shield` (helpful to give players a consistent defensive option if they're too fragile)
+- Blank Sygil: the player permanently gains a special Sygil that starts out blank. Once per day they can point at something and gain a Sygil for it (e.g. point at a wolf and gain the `Wolf` sygil).
+- New verbs. These are tricky to choose because they need to be generally applicable enough but also not redundant with "is". Some examples:
+    - `goes to` - e.g. `Building goes to Air` flings a nearby building into the air. (It's recommended to use this with the "Goes words" wordpack, which adds words like "up".)
+    - `look like` - e.g. `Paper looks like Monster`. Best given to a single player to let them specialize as an illusionist.
+- You can let players write their own Sygils to be added to the wordpack pool. Be warned that this can be very volatile.
+- Cooperative Magic: players can combine their Sygils to cast spells together.""")
+
+if s["tab"] == "Generator":
+
     st.write("Select which wordpacks to include and the number of words to generate:")
 
     # generator_input schema:
@@ -274,7 +400,11 @@ if s["current_tab"] == 0:
         else:
             st.markdown(render_list([word["word"] for word in words]))
 
-if s["current_tab"] == 1:
+    st.query_params["generator_input"] = json.dumps(s["generator_input"])
+    st.query_params["generator_output"] = json.dumps(s["generator_output"])
+
+
+if s["tab"] == "Wordpacks":
     grid = stx.grid.grid([8, 1, 1], vertical_align="bottom")
     selected_wordpack = grid.selectbox("Wordpack:", key="selected_wordpack",
                                        options=[wordpack for wordpack in s["wordpacks"].keys() if not wordpack.endswith("+")])
