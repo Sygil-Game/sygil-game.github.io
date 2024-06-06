@@ -61,7 +61,8 @@ def stable(key, default=None):
     return _stable(key, default)
 # Maintain stability of keys even if stable() isn't called for them on this rerun
 for key in st.session_state["stable_keys"]:
-    st.session_state[key] = st.session_state[key]
+    if key in st.session_state:  # This is here because of page-switching shenaningans
+        st.session_state[key] = st.session_state[key]
 
 
 st.set_page_config(layout='wide')
