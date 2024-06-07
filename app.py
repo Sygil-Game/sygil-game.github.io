@@ -37,6 +37,12 @@ def run_js(code, block=False):
     with hide():
         return (st_js_blocking if block else st_js)(code=code, key=f"js_runner_{running_js_id}_{hash(code)}")
 
+# Fetch localStorage and create helper for writing it back
+local_storage_key = "sygil_local_storage"
+local_storage = json.loads(run_js(f"""return window.localStorage.getItem("{local_storage_key}");""", block=True) or "{}")
+def write_local_storage(): run_js(f"""window.localStorage.setItem("{local_storage_key}", "{json.dumps(local_storage, ensure_ascii=False).replace('"', '\\"')}");""", block=True)
+
+
 # Load wordpacks
 def parse_wordpack(wordpack):
     lines = [line.strip() for line in s["wordpack_raws"][wordpack].split("\n")]
@@ -117,9 +123,9 @@ if selected_tab == tabs[0]:
 else:
     st.query_params["tab"] = selected_tab
 
-# Intialize generator_input and generator_output and load them from the URL if present
-stable("generator_input", default=load_from_url("generator_input", presets["Default"]))
-stable("generator_output", default=load_from_url("generator_output", []))
+# Intialize generator_input and generator_output and load them from the URL if present, or from localStorage if not
+stable("generator_input", default=load_from_url("generator_input", local_storage.get("generator_input", presets["Default"])))
+stable("generator_output", default=load_from_url("generator_output", local_storage.get("generator_output", [])))
 
 
 if s["tab"] == "Rules":
@@ -415,8 +421,9 @@ if s["tab"] == "Generator":
         else:
             st.markdown(render_list([word["word"] for word in words]))
 
-    st.query_params["generator_input"] = json.dumps(s["generator_input"])
-    st.query_params["generator_output"] = json.dumps(s["generator_output"])
+    local_storage["generator_input"] = s["generator_input"]
+    local_storage["generator_output"] = s["generator_output"]
+    write_local_storage()
 
 
 if s["tab"] == "Wordpacks":
