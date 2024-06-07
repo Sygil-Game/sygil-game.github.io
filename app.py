@@ -223,6 +223,10 @@ Here are some other ideas. These can be level-up rewards for specific players or
 - Cooperative Magic: players can combine their Sygils to cast spells together.""")
 
 if s["tab"] == "Generator":
+    if st.button("Reset"):
+        st.query_params.clear()
+        st.components.v1.html("""<script>parent.window.location.reload()</script>""")
+        st.stop()
 
     st.write("Select which wordpacks to include and the number of words to generate:")
 
