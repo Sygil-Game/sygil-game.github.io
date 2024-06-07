@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sygil Magic System</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" type="text/css" href="style.css">
+    <script type="module" src="https://md-block.verou.me/md-block.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+    <script src="script.js"></script>
+</head>
+
+<body>
+    <div class="form-check form-switch" style="position: absolute; top: 10px; right: 10px;">
+        <input class="form-check-input" type="checkbox" id="darkModeToggle" checked />
+        <label class="form-check-label" for="darkModeToggle">Dark Mode</label>
+    </div>
+
+    <div class="container">
+        <h1 class="text-center">Sygil</h1>
+        <ul class="nav nav-tabs" id="tabs">
+            <li class="nav-item"><a class="nav-link active" href="#rules" data-bs-toggle="tab">Rules</a></li>
+            <li class="nav-item"><a class="nav-link" href="#dm" data-bs-toggle="tab">DM</a></li>
+            <li class="nav-item"><a class="nav-link" href="#generator" data-bs-toggle="tab">Generator</a></li>
+            <li class="nav-item"><a class="nav-link" href="#wordpacks" data-bs-toggle="tab">Wordpacks</a></li>
+        </ul>
+        <div class="tab-content mt-3">
+            <div class="tab-pane show active" id="rules">
+                <md-block src="rules.md"></md-block>
+            </div>
+            <div class="tab-pane" id="dm">
+                <md-block src="dm.md"></md-block>
+            </div>
+            <div class="tab-pane" id="generator">
+                <button class="btn btn-danger" id="reset">Reset</button>
+                <p>Select which wordpacks to include and the number of words to generate:</p>
+                <div id="players-container"></div>
+                <button class="btn btn-primary" id="generate">Generate</button>
+                <div id="output"></div>
+            </div>
+            <div class="tab-pane" id="wordpacks">
+                <div class="input-group mb-3">
+                    <label class="input-group-text" for="wordpack-select">Wordpack:</label>
+                    <select class="form-select" id="wordpack-select"></select>
+                    <button class="btn btn-outline-secondary" id="new-wordpack">New</button>
+                    <button class="btn btn-outline-danger" id="delete-wordpack">Delete</button>
+                </div>
+                <textarea class="form-control" id="wordpack-content" rows="10"></textarea>
+            </div>
+        </div>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        const localStorageKey = "sygil_local_storage";
+        let localStorageData = JSON.parse(localStorage.getItem(localStorageKey) || "{}");
+
+        const wordpacks = {
+            Basic: "Water\nHeavy\nWood\nHot\n===",
+            // Add more default wordpacks here if needed
+        };
+
+        function saveToLocalStorage() {
+            localStorage.setItem(localStorageKey, JSON.stringify(localStorageData));
+        }
+
+        function loadWordpacks() {
+            const select = document.getElementById("wordpack-select");
+            select.innerHTML = '';
+            for (const [name, content] of Object.entries(localStorageData.wordpacks || wordpacks)) {
+                const option = document.createElement("option");
+                option.value = name;
+                option.textContent = name;
+                select.appendChild(option);
+            }
+            document.getElementById("wordpack-content").value = localStorageData.wordpacks?.[select.value] || wordpacks[select.value];
+        }
+
+        document.getElementById("new-wordpack").addEventListener("click", () => {
+            const name = prompt("Enter the new wordpack name:");
+            if (name) {
+                localStorageData.wordpacks = localStorageData.wordpacks || {};
+                localStorageData.wordpacks[name] = "";
+                saveToLocalStorage();
+                loadWordpacks();
+            }
+        });
+
+        document.getElementById("delete-wordpack").addEventListener("click", () => {
+            const select = document.getElementById("wordpack-select");
+            if (confirm(`Are you sure you want to delete the wordpack "${select.value}"?`)) {
+                delete localStorageData.wordpacks[select.value];
+                saveToLocalStorage();
+                loadWordpacks();
+            }
+        });
+
+        document.getElementById("wordpack-select").addEventListener("change", (event) => {
+            const selectedWordpack = event.target.value;
+            document.getElementById("wordpack-content").value = localStorageData.wordpacks?.[selectedWordpack] || wordpacks[selectedWordpack];
+        });
+
+        document.getElementById("wordpack-content").addEventListener("input", (event) => {
+            const select = document.getElementById("wordpack-select");
+            localStorageData.wordpacks[select.value] = event.target.value;
+            saveToLocalStorage();
+        });
+
+        document.getElementById("reset").addEventListener("click", () => {
+            localStorageData = {};
+            saveToLocalStorage();
+            location.reload();
+        });
+
+        document.getElementById("generate").addEventListener("click", () => {
+            const output = document.getElementById("output");
+            output.innerHTML = "Generated Sygils: ..."; // Add generation logic here
+        });
+
+        loadWordpacks();
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,17 @@
+body {
+    padding: 20px;
+}
+
+/* Disable transition for the dark mode toggle */
+.no-transition * {
+    transition: none !important;
+}
+
+/* Blockquote bar, since bootstrap isn't showing it properly for some reason */
+blockquote {
+    border-left: 2px solid #ddd;
+    padding-left: 1em;
+}
+html[data-bs-theme="dark"] blockquote {
+    border-color: #444;
+}
