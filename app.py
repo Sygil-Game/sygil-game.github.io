@@ -1,6 +1,6 @@
 """
-This website generates random word-sets for use with the magic system Sygil.
-It loads in one or more wordpacks, allows you to select which ones to include, and then draws a given number of words.
+The website for the Sygil magic system.
+Includes rules and a Sygil set generator.
 """
 
 import json
