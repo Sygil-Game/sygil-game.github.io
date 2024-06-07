@@ -2,6 +2,12 @@ body {
     padding: 20px;
 }
 
+#darkModeToggleContainer {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+}
+
 /* Disable transition for the dark mode toggle */
 .no-transition * {
     transition: none !important;
@@ -15,3 +21,13 @@ blockquote {
 html[data-bs-theme="dark"] blockquote {
     border-color: #444;
 }
+
+@font-face {
+    font-family: 'Precious';
+    src: url('Precious.ttf');
+}
+
+.sygil {
+    font-family: 'Precious', serif;
+}
+
