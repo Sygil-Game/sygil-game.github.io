@@ -9,6 +9,7 @@ import random
 import re
 import textwrap
 from collections import defaultdict
+from contextlib import contextmanager
 from copy import deepcopy
 from uuid import uuid4
 import streamlit as st
@@ -21,17 +22,20 @@ s = st.session_state  # Shorthand
 st.set_page_config(layout='wide')
 
 # Container for hiding components
-hide = st.container()
-with hide:
-    st.components.v1.html("""<script>window.frameElement.parentElement.parentElement.parentElement.parentElement.style.display = 'none';</script>""")
+@contextmanager
+def hide():
+    with st.container():
+        st.components.v1.html("""<script>window.frameElement.parentElement.parentElement.parentElement.parentElement.style.display = 'none';</script>""")
+        yield
 
-# Helper for running some JS without worrying about display or ID
+# Helper for running some JS without worrying about display or ID.
+# Generally works but sometimes won't rerun identical code when you expect.
 running_js_id = 0
 def run_js(code, block=False):
     global running_js_id
     running_js_id += 1
-    with hide:
-        return (st_js_blocking if block else st_js)(code=code, key=running_js_id)
+    with hide():
+        return (st_js_blocking if block else st_js)(code=code, key=f"js_runner_{running_js_id}_{hash(code)}")
 
 # Load wordpacks
 def parse_wordpack(wordpack):
@@ -469,7 +473,7 @@ if s["tab"] == "Wordpacks":
 # Make all buttons on the page HTML buttons (if they start with <)
 # Must be run after all buttons are created
 # Unfortunately introduces a brief render delay
-with hide:
+with hide():
     run_js("""window.parent.document.head.insertAdjacentHTML('beforeend', '<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" integrity="sha512-SnH5WK+bZxgPHs44uWIX+LLJAJ9/2PkPKZ5QiAj6Ta86w+fsb2TkcmfRyVX3pBnMFcV7oQPJkl9QevSCWr3W6A==" crossorigin="anonymous" referrerpolicy="no-referrer" />');
 function updateButton(el) {
     if (el.innerText.startsWith("<")) el.innerHTML = el.innerText
