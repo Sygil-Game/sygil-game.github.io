@@ -9,7 +9,13 @@
                         "wordpacks": [
                             "Basic"
                         ],
-                        "num_words": 10
+                        "num_words": 9
+                    },
+                    {
+                        "wordpacks": [
+                            "That"
+                        ],
+                        "num_words": 1
                     }
                 ],
                 "copies": 1

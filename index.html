@@ -5,10 +5,18 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sygil</title>
+
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-select@1.13.18/dist/css/bootstrap-select.min.css"
+        rel="stylesheet">
     <link rel="stylesheet" type="text/css" href="style.css">
-    <script type="module" src="https://md-block.verou.me/md-block.js"></script>
+
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+    <script type="module" src="https://md-block.verou.me/md-block.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap-select@1.13.18/js/bootstrap-select.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootbox.js/6.0.0/bootbox.min.js"></script>
     <script src="script.js"></script>
 </head>
 
@@ -27,12 +35,15 @@
             <li class="nav-item"><a class="nav-link" href="#wordpacks" data-bs-toggle="tab">Wordpacks</a></li>
         </ul>
         <div class="tab-content mt-3">
+            <!-- Rules -->
             <div class="tab-pane show active" id="rules">
                 <md-block src="rules.md"></md-block>
             </div>
+            <!-- DM -->
             <div class="tab-pane" id="dm">
                 <md-block src="dm.md"></md-block>
             </div>
+            <!-- Generator -->
             <div class="tab-pane" id="generator">
                 <button class="btn btn-danger" id="reset">Reset</button>
                 <p>Select which wordpacks to include and the number of words to generate:</p>
@@ -40,6 +51,7 @@
                 <button class="btn btn-primary" id="generate">Generate</button>
                 <div id="output"></div>
             </div>
+            <!-- Wordpacks -->
             <div class="tab-pane" id="wordpacks">
                 <div class="input-group mb-3">
                     <label class="input-group-text" for="wordpack-select">Wordpack:</label>
@@ -47,12 +59,39 @@
                     <button class="btn btn-outline-secondary" id="new-wordpack">New</button>
                     <button class="btn btn-outline-danger" id="delete-wordpack">Delete</button>
                 </div>
-                <textarea class="form-control" id="wordpack-content" rows="10"></textarea>
+                <textarea class="form-control" id="wordpack-content" rows="30"></textarea>
+            </div>
+        </div>
+        <i class="bi bi-floppy2-fill" id="save-icon"></i>
+    </div>
+
+    <!-- Modals -->
+    <div class="modal fade" id="new-wordpack-modal" tabindex="-1" aria-labelledby="new-wordpack-modal-label"
+        aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <form class="needs-validation" novalidate>
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="new-wordpack-modal-label">New Wordpack</h5><button type="button"
+                            class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <label for="new-wordpack-name">Name:</label>
+                        <input type="text" id="new-wordpack-name" class="form-control"
+                            placeholder="New wordpack name" required>
+                            <div class="invalid-feedback"> A wordpack with this name already exists.</div>
+                        <br>
+                        <label for="new-wordpack-base-on">Base on:</label>
+                        <select id="new-wordpack-base-on" class="form-select"></select>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <input type="submit" class="btn btn-primary" value="Create">
+                    </div>
+                </form>
             </div>
         </div>
     </div>
-
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 
 </html>

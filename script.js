@@ -29,7 +29,6 @@ $(document).ready(function () {
         sessionStorage.setItem('currentTab', newTab);
     });
 
-
     // Replace all instances of 'Sygil' with stylized spans
     function replaceSygil(rootNode) {
         const searchText = "Sygil";
@@ -63,59 +62,160 @@ $(document).ready(function () {
         });
     })).observe(document, { childList: true, subtree: true });
 
-    const localStorageKey = "sygil_local_storage";
-    let localStorageData = JSON.parse(localStorage.getItem(localStorageKey) || "{}");
 
-    const wordpacks = {
-        Basic: "Water\nHeavy\nWood\nHot\n===",
-        // Add more default wordpacks here if needed
+    /**
+     * Keep an object in sync with localStorage, stringifying it and updating it whenever it's changed.
+     * @param {string} key The key to use for the object in localStorage
+     * @param {object} obj The object to sync to localStorage
+     */
+    const syncToLocalStorage = (key) => {
+        key = `${PREFIX}${key}`;
+        const initialValue = JSON.parse(localStorage.getItem(key) || '{}');
+        return new Proxy(initialValue, {
+            set(target, property, value) {
+                const returnValue = Reflect.set(...arguments);
+                localStorage.setItem(key, JSON.stringify(target));
+                return returnValue;
+            },
+            deleteProperty(target, property) {
+                const returnValue = Reflect.deleteProperty(...arguments);
+                localStorage.setItem(key, JSON.stringify(target));
+                return returnValue;
+            }
+        });
     };
 
-    function saveToLocalStorage() {
-        localStorage.setItem(localStorageKey, JSON.stringify(localStorageData));
-    }
+    // Autofocus on the first input in a modal
+    $('.modal').on('shown.bs.modal', function () {
+        $(this).find('input').trigger('focus');
+    });
 
-    function loadWordpacks() {
-        const select = document.getElementById("wordpack-select");
-        select.innerHTML = '';
-        for (const [name, content] of Object.entries(localStorageData.wordpacks || wordpacks)) {
-            const option = document.createElement("option");
-            option.value = name;
-            option.textContent = name;
-            select.appendChild(option);
+    // Validate forms before submitting
+    $('.needs-validation').on('submit', function (event) {
+        if (!this.checkValidity()) {
+            event.preventDefault();
+            event.stopPropagation();
         }
-        document.getElementById("wordpack-content").value = localStorageData.wordpacks?.[select.value] || wordpacks[select.value];
-    }
+        this.classList.add('was-validated');
+    });
 
-    document.getElementById("new-wordpack").addEventListener("click", () => {
-        const name = prompt("Enter the new wordpack name:");
-        if (name) {
-            localStorageData.wordpacks = localStorageData.wordpacks || {};
-            localStorageData.wordpacks[name] = "";
-            saveToLocalStorage();
-            loadWordpacks();
+    // Async code that depends on fetched resources
+    (async () => {
+        /**
+         * Fetch list of filepaths from a directory URL
+         * @param {string} url The URL of the directory
+         * @returns {Promise<string[]>} A promise that resolves to an array of filepaths
+         */
+        async function fetchFilesFromDirectory(url) {
+            const text = await fetch(url).then(response => response.text());
+            return Array.from((new DOMParser()).parseFromString(text, 'text/html').querySelectorAll('a'))
+                .map(link => link.getAttribute('href'))
+                .filter(href => href && !href.endsWith('/'));
         }
-    });
 
-    document.getElementById("delete-wordpack").addEventListener("click", () => {
-        const select = document.getElementById("wordpack-select");
-        if (confirm(`Are you sure you want to delete the wordpack "${select.value}"?`)) {
-            delete localStorageData.wordpacks[select.value];
-            saveToLocalStorage();
-            loadWordpacks();
+        /* Wordpacks */
+        const wordpackNames = (await fetchFilesFromDirectory('/wordpacks/')).map(file => file.split('/').pop().split('.')[0]);
+        const wordpacks = syncToLocalStorage('wordpacks');
+        const wordpackRaws = syncToLocalStorage('wordpackRaws');
+        /**
+         * Parse a wordpack, splitting it into a base Wordpack and an extended Wordpack+ if it has a === line.
+         * The raw wordpack must already be in wordpackRaws.
+         * @param {string} wordpackName The name of the wordpack
+         */
+        function parseWordpack(wordpackName) {
+            const lines = wordpackRaws[wordpackName].split("\n").map(line => line.trim()).filter(line => line);
+            if (lines.includes('===')) {
+                wordpacks[wordpackName] = lines.slice(0, lines.indexOf('==='));
+                wordpacks[`${wordpackName}+`] = lines.slice(0, lines.indexOf('===')).concat(lines.slice(lines.indexOf('===') + 1));
+            } else {
+                wordpacks[wordpackName] = lines;
+            }
         }
-    });
 
-    document.getElementById("wordpack-select").addEventListener("change", (event) => {
-        const selectedWordpack = event.target.value;
-        document.getElementById("wordpack-content").value = localStorageData.wordpacks?.[selectedWordpack] || wordpacks[selectedWordpack];
-    });
+        // Fetch wordpacks
+        await Promise.all(wordpackNames.map(async wordpackName => {
+            const response = await fetch(`wordpacks/${wordpackName}.txt`);
+            const text = await response.text();
+            wordpackRaws[wordpackName] = text;
+            parseWordpack(wordpackName);
+        }));
+        const defaultWordpackNames = Object.keys(wordpacks);
 
-    document.getElementById("wordpack-content").addEventListener("input", (event) => {
-        const select = document.getElementById("wordpack-select");
-        localStorageData.wordpacks[select.value] = event.target.value;
-        saveToLocalStorage();
-    });
+        // Add wordpacks to the dropdown
+        function updateWordpackSelect() {
+            $("#wordpack-select").empty();
+            Object.entries(wordpacks)
+                .filter(([name, content]) => !name.endsWith("+")) // Extended wordpacks aren't editable because you just edit the base one
+                .forEach(([name, content]) => { $("#wordpack-select").append(`<option>${name}</option>`); });
+            // $('#wordpack-select').selectpicker();
+        }
+        updateWordpackSelect();
+        function updateWordpackContent() {
+            $("#wordpack-content").val(wordpackRaws[$("#wordpack-select").val()]);
+            $("#wordpack-content").prop('disabled', defaultWordpackNames.includes($("#wordpack-select").val()));
+        }
+        updateWordpackContent();
+        $("#wordpack-select").on("change", updateWordpackContent);
+
+        // Save modifications to the wordpack content
+        let typingTimer;
+        const doneTypingInterval = 300;
+        $("#wordpack-content").on("input", function () {
+            wordpackRaws[$("#wordpack-select").val()] = $("#wordpack-content").val();
+            parseWordpack($("#wordpack-select").val());
+            // Only show the same icon after the user has stopped typing
+            clearTimeout(typingTimer);
+            typingTimer = setTimeout(function () {
+                if ($("#save-icon").css("display") == "none") { // Only animate if it's not already visible
+                    $("#save-icon").fadeIn(0).fadeOut(1000);
+                }
+            }, doneTypingInterval);
+        });
+
+        // New wordpack button
+        $("#new-wordpack").on("click", () => {
+            $('#new-wordpack-modal').modal('show');
+            $('#new-wordpack-modal').on('submit', () => {
+                const name = $('#new-wordpack-name').val();
+                if (!name) return false;
+                if (name in wordpacks) {
+                    console.log("A wordpack with the name " + name + " already exists.");
+                    $('#new-wordpack-name').addClass('is-invalid');
+                    return false;
+                }
+
+                wordpackRaws[name] = "";
+                parseWordpack(name);
+
+                updateWordpackSelect();
+                $('#wordpack-select').val(name);
+                updateWordpackContent();
+                $('#new-wordpack-modal').modal('hide');
+                return false; // Don't do the normal HTML form submission
+            });
+        });
+
+        // Delete wordpack button
+        $("#delete-wordpack").on("click", () => {
+            const select = $("#wordpack-select");
+            bootbox.confirm(`Are you sure you want to delete the wordpack "${select.val()}"?`, (confirmed) => {
+                if (!confirmed) return;
+                delete wordpacks[select.val()];
+                delete wordpackRaws[select.val()];
+                if (`${select.val()}+` in wordpacks) {
+                    delete wordpacks[`${select.val()}+`];
+                    delete wordpackRaws[`${select.val()}+`];
+                }
+                updateWordpackSelect();
+            });
+        });
+
+        /* Presets */
+        const presets = await fetch('presets.json').then(response => response.json());
+        console.log(presets);
+    })();
+
+
 
     document.getElementById("reset").addEventListener("click", () => {
         localStorageData = {};
@@ -127,6 +227,4 @@ $(document).ready(function () {
         const output = document.getElementById("output");
         output.innerHTML = "Generated Sygils: ..."; // Add generation logic here
     });
-
-    loadWordpacks();
 });

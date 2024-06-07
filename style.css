@@ -18,6 +18,7 @@ blockquote {
     border-left: 2px solid #ddd;
     padding-left: 1em;
 }
+
 html[data-bs-theme="dark"] blockquote {
     border-color: #444;
 }
@@ -29,5 +30,13 @@ html[data-bs-theme="dark"] blockquote {
 
 .sygil {
     font-family: 'Precious', serif;
+}
+
+#save-icon {
+    position: fixed;
+    bottom: 10px;
+    right: 10px;
+    font-size: 3em;
+    display: none;
 }
 
