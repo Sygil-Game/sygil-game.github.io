@@ -1,3 +1,18 @@
+const PREFIX = "sygil_"; // For localStorage keys
+
+/**
+ * Keep an object in sync with localStorage, stringifying it and updating it whenever it's changed.
+ * @param {string} key The key to use for the object in localStorage
+ * @param {object} obj The object to sync to localStorage
+ */
+const syncToLocalStorage = (key, defaultValue = {}) => {
+    key = `${PREFIX}${key}`;
+    const initialValue = localStorage.getItem(key) !== null ? JSON.parse(localStorage.getItem(key)) : defaultValue;
+    return ObservableSlim.create(initialValue, true, changes => {
+        localStorage.setItem(key, JSON.stringify(changes[0].proxy));
+    });
+};
+
 // Clone of jQuery's serializeArray that groups by fieldset and includes blank fields (particularly empty multiselects).
 // Call it on the form element (or anything that contains the fieldsets).
 // Adapted from https://github.com/jquery/jquery/blob/74970524e5e164c72ec0415267b1e057280c9455/src/serialize.js

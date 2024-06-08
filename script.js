@@ -1,8 +1,6 @@
 import { compressUrlSafe, decompressUrlSafe } from './lib/lzma-url.mjs'
 
 
-const PREFIX = "sygil_"; // For localStorage keys
-
 // Dark mode logic that must be run before the document is ready to avoid flicker
 const darkModeKey = `${PREFIX}darkModeStatus`;
 const darkModeStatus = (localStorage.getItem(darkModeKey) ?? 'true') === 'true';
@@ -92,21 +90,6 @@ $(document).ready(function () {
             if (mutation.addedNodes) mutation.addedNodes.forEach(replaceSygil);
         });
     })).observe(document, { childList: true, subtree: true });
-
-
-    /**
-     * Keep an object in sync with localStorage, stringifying it and updating it whenever it's changed.
-     * @param {string} key The key to use for the object in localStorage
-     * @param {object} obj The object to sync to localStorage
-     */
-    const syncToLocalStorage = (key, defaultValue = {}) => {
-        key = `${PREFIX}${key}`;
-        const initialValue = localStorage.getItem(key) !== null ? JSON.parse(localStorage.getItem(key)) : defaultValue;
-        return ObservableSlim.create(initialValue, true, changes => {
-            console.log("Updating", JSON.stringify(changes[0].proxy));
-            localStorage.setItem(key, JSON.stringify(changes[0].proxy));
-        });
-    };
 
     // Autofocus on the first input in a modal
     $('.modal').on('shown.bs.modal', function () {
