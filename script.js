@@ -26,8 +26,20 @@ $(document).ready(function () {
     (new MutationObserver((mutations) => {
         mutations.forEach((mutation) => {
             if (mutation.addedNodes) mutation.addedNodes.forEach(node => {
-                $(node).find('.selectpicker').addBack('.selectpicker').each(function () {
-                    $(this).selectpicker({ style: 'btn-dark border' });
+                $(node).find('.select-picker-X').addBack('.select-picker-X').each(function () {
+                    // Initialize select picker
+                    $(this).selectpicker({
+                        liveSearch: true,
+                        noneSelectedText: "Select a wordpack",
+                        noneResultsText: 'No wordpacks found matching "{0}"',
+                        selectOnTab: true
+                    });
+                    // Make sure we don't double-dip
+                    $(this).removeClass('select-picker-X');
+                    // Bind a click handler to the clear button
+                    $(this).parent().find('.select-picker-clear').on('click', () => {
+                        $(this).find('select').selectpicker('deselectAll');
+                    });
                 });
             });
         });
@@ -295,7 +307,7 @@ $(document).ready(function () {
                     $(groupClone).find('[name="num_words"]').val(group.num_words);
                     updateWordpackSelect($(groupClone).find('[name="wordpacks"]'));
                     $(groupClone).find('[name="wordpacks"]').val(group.wordpacks);
-                    if (i > 0) $(groupClone).find('.delete-group').css('display', 'initial');
+                    if (i > 0) $(groupClone).find('.delete-group').css('visibility', 'initial');
                     $(setClone).find('.group-container').append(groupClone);
                 }
                 $(setClone).find('[name="players"]').val(set.players);

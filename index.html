@@ -91,11 +91,16 @@
                                         name="num_words">
                                 </div>
                                 <span class="mx-2">from</span>
-                                <div class="flex-grow-1">
-                                    <select class="selectpicker w-100" data-style="btn-dark border" multiple name="wordpacks"></select>
+                                <div class="flex-grow-1 position-relative align-middle">
+                                    <select class="select-picker-X w-100" data-style="form-control border" multiple
+                                        name="wordpacks"></select>
+                                    <div class="position-absolute top-0 bottom-0 d-flex align-items-center"
+                                        style="right: 2em;">
+                                        <button class="btn p-0 select-picker-clear" type="button"><i
+                                                class="bi bi-x"></i></button>
+                                    </div>
                                 </div>
-                                <button class="btn btn-outline-danger ms-2 delete-group" type="button"><i
-                                        class="bi bi-trash"></i></button>
+                            </div>
                         </template>
                         <div id="set-container"></div>
                         <button type="submit" class="btn btn-primary mt-2">Generate</button>

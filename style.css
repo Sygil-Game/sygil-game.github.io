@@ -40,9 +40,9 @@ html[data-bs-theme="dark"] blockquote {
     display: none;
 }
 
-.number-input[type=number]::-webkit-inner-spin-button, 
+.number-input[type=number]::-webkit-inner-spin-button,
 .number-input[type=number]::-webkit-outer-spin-button {
-  opacity: 1;
+    opacity: 1;
 }
 
 #generator-output-container {
@@ -51,5 +51,15 @@ html[data-bs-theme="dark"] blockquote {
 
 /* Hidden by default, shown if there are multiple groups */
 .delete-group {
+    visibility: hidden;
+}
+
+/* Hidden by default, shown if there are multiple sets */
+.set-header {
     display: none;
+}
+
+/* Fix bootstrap-select CSS glitch that breaks dark mode */
+.bootstrap-select .no-results {
+    background: unset;
 }
