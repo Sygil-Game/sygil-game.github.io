@@ -287,12 +287,14 @@ $(document).ready(function () {
             $('#set-container').empty();
             for (const set of preset.sets) {
                 const setClone = $('#set-template').prop('content').cloneNode(true);
-                for (const group of set.groups) {
-                    const innerClone = $('#group-template').prop('content').cloneNode(true);
-                    $(innerClone).find('[name="num_words"]').val(group.num_words);
-                    updateWordpackSelect($(innerClone).find('[name="wordpacks"]'));
-                    $(innerClone).find('[name="wordpacks"]').val(group.wordpacks);
-                    $(setClone).find('.group-container').append(innerClone);
+                for (let i = 0; i < set.groups.length; i++) {
+                    const group = set.groups[i];
+                    const groupClone = $('#group-template').prop('content').cloneNode(true);
+                    $(groupClone).find('[name="num_words"]').val(group.num_words);
+                    updateWordpackSelect($(groupClone).find('[name="wordpacks"]'));
+                    $(groupClone).find('[name="wordpacks"]').val(group.wordpacks);
+                    if (i > 0) $(groupClone).find('.delete-group').css('display','initial');
+                    $(setClone).find('.group-container').append(groupClone);
                 }
                 $(setClone).find('[name="players"]').val(set.players);
                 if (set.players.length > 1) $(setClone).find('.set').addClass('border');
@@ -348,6 +350,12 @@ $(document).ready(function () {
         $("body").on("click", ".add-group", function () {
             const setIndex = $(this).closest(".set").index();
             generator_input.sets[setIndex].groups.push({ num_words: null, wordpacks: [""] });
+            loadPreset(generator_input);
+        });
+        $("body").on("click", ".delete-group", function () {
+            const setIndex = $(this).closest(".set").index();
+            const groupIndex = $(this).closest(".group").index();
+            generator_input.sets[setIndex].groups.splice(groupIndex, 1);
             loadPreset(generator_input);
         });
     })();

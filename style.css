@@ -48,3 +48,8 @@ html[data-bs-theme="dark"] blockquote {
 #generator-output-container {
     display: none;
 }
+
+/* Hidden by default, shown if there are multiple groups */
+.delete-group {
+    display: none;
+}

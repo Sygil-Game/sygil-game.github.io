@@ -70,7 +70,7 @@
                         </template>
                         <!-- Template for one group -->
                         <template id="group-template">
-                            <div class="d-flex p-2 align-items-center">
+                            <div class="d-flex p-2 align-items-center group">
                                 <div class="col-1">
                                     <input type="number" min="1" step="1"
                                         class="form-control number-input" name="num_words">
@@ -82,6 +82,7 @@
                                     <select class="form-select selectpicker w-100" multiple
                                         name="wordpacks"></select>
                                 </div>
+                                <button class="btn btn-outline-danger ms-2 delete-group" type="button"><i class="bi bi-trash"></i></button>
                             </div>
                         </template>
                         <div id="set-container"></div>
