@@ -3,7 +3,8 @@
 Sygils are power words that can be combined to cast spells. You'll get a set from your DM, like:  
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;`Water`, `Heavy`, `Wood`, `Hot`  
 To cast a spell, choose any two Sygils and combine them using the verb "is":  
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;`Wood is Water` - *The wooden door blocking your path turns into a puddle.*
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;`Wood is Water` - *The wooden door blocking your path turns into a puddle.*  
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;`That is Wood` - *The guard you're pointing at turns into a tree.*  
 Once you cast a spell, you can't cast it again that day, though you can use the same Sygils for new spells.  
 
 You can direct the general interpretation of your spell if it is ambiguous. `Hot is Heavy` could mean  
@@ -11,9 +12,6 @@ You can direct the general interpretation of your spell if it is ambiguous. `Hot
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Or: *The heat coming from the cauldron becomes heavier and more intense.*  
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Or: both!  
 Your DM has final say on the outcome of spell and whether an interpretation is reasonable.
-
-You always have the special Sygil `That`, which can only be used as the first Sygil in a spell:  
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;`That is Wood` - *The guard you're pointing at turns into a tree.*
 
 The power of your spells is **LIMITLESS**. Be careful how you use them.  
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;`Water is Hot` - *You decide to boil the entire ocean for fun. The resulting steam explosion instantly kills every creature on the planet (including you).*

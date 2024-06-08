@@ -49,7 +49,7 @@ Enemies:
 
 As players become accustomed to **Sygil**, you can introduce new abilities and mechanics.  
 Most obviously, you can increase the number of Sygils or use more niche wordpacks once players are creative enough to find ways to use weirder Sygils.  
-`That` is a very powerful training Sygil meant to make it easier for players to cast spells in any context; more experienced players might not need it.  
+`That` is a very powerful training Sygil meant to make it easier for players to cast spells in any context; for more experienced players, you can remove it.
 To introduce stronger themes to certain sessions and more variety between sessions, you can give players access to one or more temporary Sygils based on the environment they're in (e.g. everyone can use `Tree` when in the haunted forest).  
 Here are some other ideas. These can be level-up rewards for specific players or new mechanics that become accessible to everyone.
 - Signature Sygil: the player picks one Sygil they've used before to keep forever. (Let them swap this if they feel like they're stuck with something bad.)
