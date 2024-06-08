@@ -29,29 +29,34 @@ $(document).ready(function () {
         sessionStorage.setItem('currentTab', newTab);
     });
 
-    // Replace all instances of 'Sygil' with stylized spans
+    // Replace all instances of 'Sygil(s)' with stylized spans
     function replaceSygil(rootNode) {
-        const searchText = "Sygil";
-        const walker = document.createTreeWalker(rootNode, NodeFilter.SHOW_TEXT, null, false);
-        let node;
-        while (node = walker.nextNode()) {
-            if (!node.nodeValue.includes(searchText)) continue;
-            if (node.nodeValue == searchText && node.parentNode.classList.contains("sygil")) continue; // Don't restyle text that's already styled
+        const regex = /Sygils?/g;
 
-            const parts = node.nodeValue.split(searchText);
+        const nodeIterator = document.createNodeIterator(rootNode, NodeFilter.SHOW_TEXT, {
+            acceptNode(node) {
+                if (!node.nodeValue.match(regex)) return NodeFilter.FILTER_REJECT;
+                if (node.parentNode.classList.contains('sygil')) return NodeFilter.FILTER_REJECT;
+                return NodeFilter.FILTER_ACCEPT;
+            }
+        });
+        const nodes = [];
+        let currentNode;
+        while ((currentNode = nodeIterator.nextNode())) nodes.push(currentNode); // Collect into a list first since we'll be modifying the DOM and that confuses the iterator
+        for (const node of nodes) {
+            const delimiters = Array.from(node.nodeValue.matchAll(regex), match => match[0]);
+            const parts = node.nodeValue.split(regex);
             const fragment = document.createDocumentFragment(); // Document fragment to hold the new nodes
-            for (let i = 0; i < parts.length; i++) {
-                if (parts[i]) { // Don't add empty text nodes
-                    fragment.appendChild(document.createTextNode(parts[i]));
-                }
-                if (i < parts.length - 1) { // We split on "Sygil", so between each pair of text nodes we add a "Sygil" span
+            parts.forEach((part) => {
+                if (part) fragment.appendChild(document.createTextNode(part)); // Don't add empty text nodes
+                const delimiter = delimiters.shift();
+                if (delimiter) { // Re-add the "Sygil(s)" delimiters we split on
                     const span = document.createElement('span');
                     span.className = 'sygil';
-                    span.textContent = searchText;
+                    span.textContent = delimiter;
                     fragment.appendChild(span);
                 }
-            }
-
+            });
             node.parentNode.replaceChild(fragment, node);
         }
     }
@@ -178,7 +183,7 @@ $(document).ready(function () {
             $('#new-wordpack-modal').modal('show');
             $('#new-wordpack-modal').on('submit', e => {
                 e.preventDefault();
-                
+
                 const name = $('#new-wordpack-name').val();
                 if (!name) return false;
                 if (name in wordpacks) {
@@ -217,7 +222,7 @@ $(document).ready(function () {
         const presets = await fetch('presets.json').then(response => response.json());
 
         /* Generator */
-        
+
         // Load a preset into the generator
         function loadPreset(preset) {
             for (const set of preset.sets) {
