@@ -120,7 +120,7 @@ $(document).ready(function () {
         }
 
         /* Wordpacks */
-        const defaultWordpackNames = (await fetchFilesFromDirectory('/wordpacks/')).map(file => file.split('/').pop().split('.')[0]);
+        const defaultWordpackNames = (await fetchFilesFromDirectory('/static/wordpacks/')).map(file => file.split('/').pop().split('.')[0]);
         const wordpacks = syncToLocalStorage('wordpacks');
         const wordpackRaws = syncToLocalStorage('wordpackRaws');
         /**
@@ -218,7 +218,7 @@ $(document).ready(function () {
         });
 
         /* Presets */
-        const presets = await fetch('presets.json').then(response => response.json());
+        const presets = await fetch('static/presets.json').then(response => response.json());
 
         /* Generator */
         // Clone one object to another, overwriting it.
