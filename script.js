@@ -282,19 +282,29 @@ $(document).ready(function () {
         // Load a preset into the generator
         function loadPreset(preset) {
             $('#set-container').empty();
-            for (const set of preset.sets) {
+            for (let i = 0; i < preset.sets.length; i++) {
+                const set = preset.sets[i];
                 const setClone = $('#set-template').prop('content').cloneNode(true);
-                for (let i = 0; i < set.groups.length; i++) {
-                    const group = set.groups[i];
+
+                // Header
+                if (preset.sets.length > 1) {
+                    $(setClone).find('.set').addClass('border');
+                    $(setClone).find('.set-header').removeClass('d-none');
+                } else {
+                    $(setClone).find('.set').removeClass('border');
+                    $(setClone).find('.set-header').addClass('d-none');
+                }
+
+                for (const group of set.groups) {
                     const groupClone = $('#group-template').prop('content').cloneNode(true);
                     $(groupClone).find('[name="num_words"]').val(group.num_words);
                     updateWordpackSelect($(groupClone).find('[name="wordpacks"]'));
                     $(groupClone).find('[name="wordpacks"]').val(group.wordpacks);
-                    if (i > 0) $(groupClone).find('.delete-group').css('visibility', 'initial');
+                    if (set.groups.length > 1) $(groupClone).find('.delete-group').removeClass('invisible');
                     $(setClone).find('.group-container').append(groupClone);
                 }
                 $(setClone).find('[name="players"]').val(set.players);
-                if (set.players.length > 1) $(setClone).find('.set').addClass('border');
+
                 $('#set-container').append(setClone);
             }
         }
@@ -341,18 +351,31 @@ $(document).ready(function () {
             await navigator.clipboard.writeText(`${window.location.href}?${url_parts.join("&")}`);
         });
 
-        $("body").on("click", ".add-group", function () {
-            const setIndex = $(this).closest(".set").index();
-            generator_input.sets[setIndex].groups.push({ num_words: null, wordpacks: [""] });
-            loadPreset(generator_input);
-            updateGeneratorInput();
-        });
-        $("body").on("click", ".delete-group", function () {
-            const setIndex = $(this).closest(".set").index();
-            const groupIndex = $(this).closest(".group").index();
-            generator_input.sets[setIndex].groups.splice(groupIndex, 1);
-            loadPreset(generator_input);
-            updateGeneratorInput();
-        });
+        // Bind button handlers
+        function wrap(callback) {
+            return function () { // Helper to locate set/group indices and update generator
+                callback($(this).closest(".set").index(), $(this).closest(".group").index());
+                loadPreset(generator_input);
+                updateGeneratorInput();
+            };
+        }
+        $("body").on("click", ".add-group", wrap((setIndex, groupIndex) =>
+            generator_input.sets[setIndex].groups.push({ num_words: null, wordpacks: [""] })));
+        $("body").on("click", ".delete-group", wrap((setIndex, groupIndex) =>
+            generator_input.sets[setIndex].groups.splice(groupIndex, 1)));
+        $("body").on("click", ".add-set", wrap((setIndex, groupIndex) =>
+            generator_input.sets.push({ name: "", groups: [{ wordpacks: [], num_words: null }], players: null })));
+        $("body").on("click", ".set-up", wrap((setIndex, groupIndex) => {
+            if (setIndex == 0) return;
+            generator_input.sets.splice(setIndex - 1, 0, generator_input.sets.splice(setIndex, 1)[0]);
+        }));
+        $("body").on("click", ".set-down", wrap((setIndex, groupIndex) => {
+            if (setIndex == generator_input.sets.length - 1) return;
+            generator_input.sets.splice(setIndex + 1, 0, generator_input.sets.splice(setIndex, 1)[0]);
+        }));
+        $("body").on("click", ".set-copy", wrap((setIndex, groupIndex) =>
+            generator_input.sets.splice(setIndex + 1, 0, JSON.parse(JSON.stringify(generator_input.sets[setIndex])))));
+        $("body").on("click", ".set-delete", wrap((setIndex, groupIndex) =>
+            generator_input.sets.splice(setIndex, 1)));
     })();
 });

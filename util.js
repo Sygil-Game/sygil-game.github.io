@@ -23,7 +23,7 @@ jQuery.fn.extend({
             rsubmitterTypes = /^(?:submit|button|image|reset|file)$/i,
             rsubmittable = /^(?:input|select|textarea|keygen)/i;
 
-        const output = this.find("fieldset").get().map(fieldset => [
+        return this.find("fieldset").get().map(fieldset =>
             jQuery(fieldset).find("*[name]").filter(function () {
                 var type = this.type;
 
@@ -35,8 +35,6 @@ jQuery.fn.extend({
                 if (Array.isArray(val)) return { name: elem.name, value: val.map(val => val?.replace(rCRLF, "\r\n")) };
                 return { name: elem.name, value: val?.replace(rCRLF, "\r\n") };
             })
-        ]);
-        if (output.length === 1) return output[0];
-        return output;
+        );
     }
 });

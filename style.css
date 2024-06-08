@@ -49,16 +49,6 @@ html[data-bs-theme="dark"] blockquote {
     display: none;
 }
 
-/* Hidden by default, shown if there are multiple groups */
-.delete-group {
-    visibility: hidden;
-}
-
-/* Hidden by default, shown if there are multiple sets */
-.set-header {
-    display: none;
-}
-
 /* Fix bootstrap-select CSS glitch that breaks dark mode */
 .bootstrap-select .no-results {
     background: unset;
