@@ -19,7 +19,7 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap-select@1.13.18/js/bootstrap-select.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/bootbox.js/6.0.0/bootbox.min.js"></script>
     <script src="generator.js"></script>
-    <script src="script.js"></script>
+    <script src="script.js" type="module"></script>
 </head>
 
 <body>
@@ -106,7 +106,8 @@
                         </div>
                     </div>
                     <div id="generator-output" class="user-select-all"></div>
-                    <button id="copy-to-clipboard" class="ms-2"><i class="bi bi-clipboard"></i></button>
+                    <button id="copy-to-clipboard" class="btn btn-outline-secondary ms-2"><i class="bi bi-clipboard"></i></button>
+                    <button id="copy-link" class="btn btn-outline-secondary ms-2"><i class="bi bi-link-45deg"></i></button>
                 </div>
             </div>
             <!-- Wordpacks -->
@@ -114,8 +115,8 @@
                 <div class="input-group mb-3">
                     <label class="input-group-text" for="wordpack-select">Wordpack:</label>
                     <select class="form-select" id="wordpack-select"></select>
-                    <button class="btn btn-outline-secondary" id="new-wordpack">New</button>
-                    <button class="btn btn-outline-danger" id="delete-wordpack">Delete</button>
+                    <button class="btn btn-outline-secondary" id="new-wordpack"><i class="bi bi-plus"></i></button>
+                    <button class="btn btn-outline-danger" id="delete-wordpack"><i class="bi bi-trash"></i></button>
                 </div>
                 <textarea class="form-control" id="wordpack-content" rows="30"></textarea>
             </div>

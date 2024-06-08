@@ -1,3 +1,6 @@
+import { compressUrlSafe, decompressUrlSafe } from './lib/lzma-url.mjs'
+
+
 const PREFIX = "sygil_"; // For localStorage keys
 
 // Dark mode logic that must be run before the document is ready to avoid flicker
@@ -287,40 +290,46 @@ $(document).ready(function () {
             }
         }
 
-        // Load and initialize generator output options
-        const generator_output_options = syncToLocalStorage("generator_output_options", {
-            alphabetize: true,
-            oneLine: false,
-            groupByWordpack: false
-        });
-        $("#alphabetize").prop("checked", generator_output_options.alphabetize);
-        $("#one-line").prop("checked", generator_output_options.oneLine);
-        $("#group-by-wordpack").prop("checked", generator_output_options.groupByWordpack);
         const generator_input = syncToLocalStorage("generator_input");
-        const generator_output = syncToLocalStorage("generator_output", { "output": [] });
+        const generator_output = syncToLocalStorage("generator_output", {
+            output: [],
+            options: {
+                alphabetize: true,
+                oneLine: false,
+                groupByWordpack: false
+            }
+        });
+        // Load params from URL if present
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.has("i")) overwrite(generator_input, JSON.parse(decompressUrlSafe(urlParams.get("i"))));
+        if (urlParams.has("o")) overwrite(generator_output, JSON.parse(decompressUrlSafe(urlParams.get("o"))));
+        // Initialize generator output options
+        $("#alphabetize").prop("checked", generator_output["options"]["alphabetize"]);
+        $("#one-line").prop("checked", generator_output["options"]["oneLine"]);
+        $("#group-by-wordpack").prop("checked", generator_output["options"]["groupByWordpack"]);
+
         let markdown = "";
         function render() {
-            markdown = renderOutput(generator_output["output"], generator_output_options);
+            markdown = renderOutput(generator_output);
             $("#generator-output").empty().append(`<md-block>${markdown}</md-block>`);
         }
         $("#generator-form").on("submit", e => {
             e.preventDefault();
             const preset = getPresetFromForm();
             overwrite(generator_input, {
-                "schema_version": CURRENT_SCHEMA_VERSION,
-                "sets": preset,
-                "wordpacks": JSON.parse(JSON.stringify(wordpacks))
+                schema_version: CURRENT_SCHEMA_VERSION,
+                sets: preset,
+                wordpacks: JSON.parse(JSON.stringify(wordpacks))
             });
-            console.log(generator_input);
             generator_output["output"] = generate(generator_input);
             render();
             $("#generator-output-container").fadeIn();
             return false;
         });
         $("#generator-output-options").on("change", () => {
-            generator_output_options.alphabetize = $("#alphabetize").is(":checked");
-            generator_output_options.oneLine = $("#one-line").is(":checked");
-            generator_output_options.groupByWordpack = $("#group-by-wordpack").is(":checked");
+            generator_output["options"]["alphabetize"] = $("#alphabetize").is(":checked");
+            generator_output["options"]["oneLine"] = $("#one-line").is(":checked");
+            generator_output["options"]["groupByWordpack"] = $("#group-by-wordpack").is(":checked");
             render();
         });
         // Show output if initially loaded from localStorage
@@ -330,5 +339,11 @@ $(document).ready(function () {
         }
 
         $("#copy-to-clipboard").on("click", async () => { await navigator.clipboard.writeText(markdown.replace(/`/g, "")); });
+        $("#copy-link").on("click", async () => {
+            const url_parts = []
+            url_parts.push("i=" + compressUrlSafe(JSON.stringify(generator_input)))
+            if (generator_output["output"].length > 0) url_parts.push("o=" + compressUrlSafe(JSON.stringify(generator_output)))
+            await navigator.clipboard.writeText(`${window.location.href}?${url_parts.join("&")}`);
+        });
     })();
 });

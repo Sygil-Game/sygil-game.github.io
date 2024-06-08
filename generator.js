@@ -47,25 +47,22 @@ function generate(generator_input) {
 
 /**
  * Render the generator output in markdown format.
- * @param {Array} generator_output - The generator output.
- * @param {boolean} alphabetize - Whether to alphabetize the words.
- * @param {boolean} oneLine - Whether to render the words as one line or as a list.
- * @param {boolean} groupByWordpack - Whether to group the words by wordpack.
+ * @param {Object} generator_output - The generator output.
  * @returns {string} The rendered output.
  */
-function renderOutput(generator_output, {alphabetize = true, oneLine = false, groupByWordpack = false} = {}) {
+function renderOutput(generator_output) {
     function renderList(l, pre = false) {
         if (l.length === 0) return "";
-        else if (oneLine) return (pre ? "* " : "") + l.map(word => `\`${word}\``).join(", ");
+        else if (generator_output["options"]["oneLine"]) return (pre ? "* " : "") + l.map(word => `\`${word}\``).join(", ");
         else return l.map(word => `* \`${word}\``).join("\n");
     }
 
     let output = "";
-    generator_output.forEach(player => {
+    generator_output["output"].forEach(player => {
         let words = player.words;
-        if (alphabetize) words = [...words].sort((a, b) => a.word.localeCompare(b.word));
-        if (generator_output.length > 1) output += `### ${player.name}\n`;
-        if (groupByWordpack) {
+        if (generator_output["options"]["alphabetize"]) words = [...words].sort((a, b) => a.word.localeCompare(b.word));
+        if (generator_output["output"].length > 1) output += `### ${player.name}\n`;
+        if (generator_output["options"]["groupByWordpack"]) {
             const groupedWords = {};
             for (const word of words) {
                 if (!groupedWords[word.wordpack_origin]) groupedWords[word.wordpack_origin] = [];
