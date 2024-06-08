@@ -22,6 +22,17 @@ $(document).ready(function () {
         setDarkModeStatus(darkModeStatus);
     });
 
+    // Initialize select pickers whenever they're added
+    (new MutationObserver((mutations) => {
+        mutations.forEach((mutation) => {
+            if (mutation.addedNodes) mutation.addedNodes.forEach(node => {
+                $(node).find('.selectpicker').addBack('.selectpicker').each(function () {
+                    $(this).selectpicker({ style: 'btn-dark border' });
+                });
+            });
+        });
+    })).observe(document, { childList: true, subtree: true });
+
     // Save active tab in sessionStorage
     const storedTab = sessionStorage.getItem('currentTab');
     if (storedTab) {
@@ -79,17 +90,9 @@ $(document).ready(function () {
     const syncToLocalStorage = (key, defaultValue = {}) => {
         key = `${PREFIX}${key}`;
         const initialValue = localStorage.getItem(key) !== null ? JSON.parse(localStorage.getItem(key)) : defaultValue;
-        return new Proxy(initialValue, {
-            set(target, property, value) {
-                const returnValue = Reflect.set(...arguments);
-                localStorage.setItem(key, JSON.stringify(target));
-                return returnValue;
-            },
-            deleteProperty(target, property) {
-                const returnValue = Reflect.deleteProperty(...arguments);
-                localStorage.setItem(key, JSON.stringify(target));
-                return returnValue;
-            }
+        return ObservableSlim.create(initialValue, true, changes => {
+            console.log("Updating", JSON.stringify(changes[0].proxy));
+            localStorage.setItem(key, JSON.stringify(changes[0].proxy));
         });
     };
 
@@ -155,7 +158,6 @@ $(document).ready(function () {
             Object.entries(wordpacks)
                 .filter(([name, content]) => !name.endsWith("+")) // Extended wordpacks aren't editable because you just edit the base one
                 .forEach(([name, content]) => { el.append(`<option>${name}</option>`); });
-            // el.selectpicker();
         }
         updateWordpackSelect("#wordpack-select");
         function updateWordpackContent() {
@@ -227,7 +229,7 @@ $(document).ready(function () {
         // Clone one object to another, overwriting it.
         // Used for when you need to preserve the target object instead of creating a new one. (i.e. for proxies)
         function overwrite(target, source) {
-            Object.getOwnPropertyNames(target).forEach(p => delete target[p]);
+            Object.getOwnPropertyNames(target).filter(p => !p.startsWith("__")).forEach(p => delete target[p]);
             Object.assign(target, JSON.parse(JSON.stringify(source)));
             return target;
         }
@@ -293,14 +295,13 @@ $(document).ready(function () {
                     $(groupClone).find('[name="num_words"]').val(group.num_words);
                     updateWordpackSelect($(groupClone).find('[name="wordpacks"]'));
                     $(groupClone).find('[name="wordpacks"]').val(group.wordpacks);
-                    if (i > 0) $(groupClone).find('.delete-group').css('display','initial');
+                    if (i > 0) $(groupClone).find('.delete-group').css('display', 'initial');
                     $(setClone).find('.group-container').append(groupClone);
                 }
                 $(setClone).find('[name="players"]').val(set.players);
                 if (set.players.length > 1) $(setClone).find('.set').addClass('border');
                 $('#set-container').append(setClone);
             }
-            $('#generator .selectpicker').selectpicker();
         }
         loadPreset(generator_input);
 
@@ -316,9 +317,7 @@ $(document).ready(function () {
                 wordpacks: JSON.parse(JSON.stringify(wordpacks))
             });
         }
-        $("#generator-form").on("change", () => {
-            updateGeneratorInput();
-        });
+        $("#generator-form").on("change", updateGeneratorInput);
         $("#generator-form").on("submit", e => {
             e.preventDefault();
             updateGeneratorInput();
@@ -351,12 +350,14 @@ $(document).ready(function () {
             const setIndex = $(this).closest(".set").index();
             generator_input.sets[setIndex].groups.push({ num_words: null, wordpacks: [""] });
             loadPreset(generator_input);
+            updateGeneratorInput();
         });
         $("body").on("click", ".delete-group", function () {
             const setIndex = $(this).closest(".set").index();
             const groupIndex = $(this).closest(".group").index();
             generator_input.sets[setIndex].groups.splice(groupIndex, 1);
             loadPreset(generator_input);
+            updateGeneratorInput();
         });
     })();
 });
