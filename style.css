@@ -44,3 +44,7 @@ html[data-bs-theme="dark"] blockquote {
 .number-input[type=number]::-webkit-outer-spin-button {
   opacity: 1;
 }
+
+#generator-output-container {
+    display: none;
+}

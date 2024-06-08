@@ -73,9 +73,9 @@ $(document).ready(function () {
      * @param {string} key The key to use for the object in localStorage
      * @param {object} obj The object to sync to localStorage
      */
-    const syncToLocalStorage = (key) => {
+    const syncToLocalStorage = (key, defaultValue = {}) => {
         key = `${PREFIX}${key}`;
-        const initialValue = JSON.parse(localStorage.getItem(key) || '{}');
+        const initialValue = localStorage.getItem(key) !== null ? JSON.parse(localStorage.getItem(key)) : defaultValue;
         return new Proxy(initialValue, {
             set(target, property, value) {
                 const returnValue = Reflect.set(...arguments);
@@ -119,7 +119,7 @@ $(document).ready(function () {
         }
 
         /* Wordpacks */
-        const wordpackNames = (await fetchFilesFromDirectory('/wordpacks/')).map(file => file.split('/').pop().split('.')[0]);
+        const defaultWordpackNames = (await fetchFilesFromDirectory('/wordpacks/')).map(file => file.split('/').pop().split('.')[0]);
         const wordpacks = syncToLocalStorage('wordpacks');
         const wordpackRaws = syncToLocalStorage('wordpackRaws');
         /**
@@ -138,13 +138,12 @@ $(document).ready(function () {
         }
 
         // Fetch wordpacks
-        await Promise.all(wordpackNames.map(async wordpackName => {
+        await Promise.all(defaultWordpackNames.map(async wordpackName => {
             const response = await fetch(`wordpacks/${wordpackName}.txt`);
             const text = await response.text();
             wordpackRaws[wordpackName] = text;
             parseWordpack(wordpackName);
         }));
-        const defaultWordpackNames = Object.keys(wordpacks);
 
         // Add wordpacks to the given dropdown
         function updateWordpackSelect(el) {
@@ -242,12 +241,94 @@ $(document).ready(function () {
         }
         loadPreset(presets["Default"]);
 
+        // Clone one object to another, overwriting it.
+        // Used for when you need to preserve the target object instead of creating a new one. (i.e. for proxies)
+        function overwrite(target, source) {
+            Object.getOwnPropertyNames(target).forEach(p => delete target[p]);
+            Object.assign(target, JSON.parse(JSON.stringify(source)));
+            return target;
+        }
+
+        // Assert helper
+        function assert(value, expected) {
+            if (value !== expected) throw new Error(`Expected ${expected} but got ${value}`);
+            return value;
+        }
+
+        // Function to convert the current form data to a preset
+        function getPresetFromForm() {
+            const formData = $("#generator-form").find("fieldset").map((i, el) => [$(el).find("*[name]").serializeArray()]).get();
+
+            try {
+                return formData.map(set => {
+                    function next(expectedName, allowFail = false) {
+                        if (set[0].name !== expectedName) {
+                            if (allowFail) return false;
+                            throw new Error(`Expected ${expectedName} but got ${set[0].name}`);
+                        }
+                        return set.shift().value;
+                    }
+
+                    const out = {};
+                    out.name = next("set_name");
+                    out.groups = [];
+                    let num_words;
+                    while ((num_words = next("num_words", true)) !== false) {
+                        out.groups.push({
+                            "num_words": parseInt(num_words),
+                            "wordpacks": [next("wordpacks")]
+                        });
+                    }
+                    out.players = parseInt(next("players"));
+                    return out;
+                });
+            } catch (e) {
+                console.error("Invalid form data:", e);
+            }
+        }
+
+        // Load and initialize generator output options
+        const generator_output_options = syncToLocalStorage("generator_output_options", {
+            alphabetize: true,
+            oneLine: false,
+            groupByWordpack: false
+        });
+        $("#alphabetize").prop("checked", generator_output_options.alphabetize);
+        $("#one-line").prop("checked", generator_output_options.oneLine);
+        $("#group-by-wordpack").prop("checked", generator_output_options.groupByWordpack);
+        const generator_input = syncToLocalStorage("generator_input");
+        const generator_output = syncToLocalStorage("generator_output", { "output": [] });
+        let markdown = "";
+        function render() {
+            markdown = renderOutput(generator_output["output"], generator_output_options);
+            $("#generator-output").empty().append(`<md-block>${markdown}</md-block>`);
+        }
         $("#generator-form").on("submit", e => {
             e.preventDefault();
-            const x = JSON.parse(JSON.stringify(presets["Default"]));
-            x["wordpacks"] = JSON.parse(JSON.stringify(wordpacks));
-            console.log(generate(x));
+            const preset = getPresetFromForm();
+            overwrite(generator_input, {
+                "schema_version": CURRENT_SCHEMA_VERSION,
+                "sets": preset,
+                "wordpacks": JSON.parse(JSON.stringify(wordpacks))
+            });
+            console.log(generator_input);
+            generator_output["output"] = generate(generator_input);
+            render();
+            $("#generator-output-container").fadeIn();
             return false;
         });
+        $("#generator-output-options").on("change", () => {
+            generator_output_options.alphabetize = $("#alphabetize").is(":checked");
+            generator_output_options.oneLine = $("#one-line").is(":checked");
+            generator_output_options.groupByWordpack = $("#group-by-wordpack").is(":checked");
+            render();
+        });
+        // Show output if initially loaded from localStorage
+        if (generator_output["output"].length > 0) {
+            render();
+            $("#generator-output-container").show();
+        }
+
+        $("#copy-to-clipboard").on("click", async () => { await navigator.clipboard.writeText(markdown.replace(/`/g, "")); });
     })();
 });
