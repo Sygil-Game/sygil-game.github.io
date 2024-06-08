@@ -40,3 +40,7 @@ html[data-bs-theme="dark"] blockquote {
     display: none;
 }
 
+.number-input[type=number]::-webkit-inner-spin-button, 
+.number-input[type=number]::-webkit-outer-spin-button {
+  opacity: 1;
+}

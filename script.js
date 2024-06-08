@@ -91,10 +91,10 @@ $(document).ready(function () {
     });
 
     // Validate forms before submitting
-    $('.needs-validation').on('submit', function (event) {
+    $('.needs-validation').on('submit', function (e) {
         if (!this.checkValidity()) {
-            event.preventDefault();
-            event.stopPropagation();
+            e.preventDefault();
+            e.stopPropagation();
         }
         this.classList.add('was-validated');
     });
@@ -141,15 +141,16 @@ $(document).ready(function () {
         }));
         const defaultWordpackNames = Object.keys(wordpacks);
 
-        // Add wordpacks to the dropdown
-        function updateWordpackSelect() {
-            $("#wordpack-select").empty();
+        // Add wordpacks to the given dropdown
+        function updateWordpackSelect(el) {
+            el = $(el);
+            el.empty();
             Object.entries(wordpacks)
                 .filter(([name, content]) => !name.endsWith("+")) // Extended wordpacks aren't editable because you just edit the base one
-                .forEach(([name, content]) => { $("#wordpack-select").append(`<option>${name}</option>`); });
-            // $('#wordpack-select').selectpicker();
+                .forEach(([name, content]) => { el.append(`<option>${name}</option>`); });
+            // el.selectpicker();
         }
-        updateWordpackSelect();
+        updateWordpackSelect("#wordpack-select");
         function updateWordpackContent() {
             $("#wordpack-content").val(wordpackRaws[$("#wordpack-select").val()]);
             $("#wordpack-content").prop('disabled', defaultWordpackNames.includes($("#wordpack-select").val()));
@@ -175,7 +176,9 @@ $(document).ready(function () {
         // New wordpack button
         $("#new-wordpack").on("click", () => {
             $('#new-wordpack-modal').modal('show');
-            $('#new-wordpack-modal').on('submit', () => {
+            $('#new-wordpack-modal').on('submit', e => {
+                e.preventDefault();
+                
                 const name = $('#new-wordpack-name').val();
                 if (!name) return false;
                 if (name in wordpacks) {
@@ -187,7 +190,7 @@ $(document).ready(function () {
                 wordpackRaws[name] = "";
                 parseWordpack(name);
 
-                updateWordpackSelect();
+                updateWordpackSelect("#wordpack-select");
                 $('#wordpack-select').val(name);
                 updateWordpackContent();
                 $('#new-wordpack-modal').modal('hide');
@@ -212,19 +215,34 @@ $(document).ready(function () {
 
         /* Presets */
         const presets = await fetch('presets.json').then(response => response.json());
-        console.log(presets);
+
+        /* Generator */
+        
+        // Load a preset into the generator
+        function loadPreset(preset) {
+            for (const set of preset.sets) {
+                const setClone = $('#set-template').prop('content').cloneNode(true);
+                for (const group of set.groups) {
+                    const innerClone = $(setClone).find('#group-template').prop('content').cloneNode(true);
+                    $(innerClone).find('[name="num_words"]').val(group.num_words);
+                    updateWordpackSelect($(innerClone).find('[name="wordpacks"]'));
+                    $(innerClone).find('[name="wordpacks"]').val(group.wordpacks);
+                    $(setClone).find('.group-container').append(innerClone);
+                }
+                $(setClone).find('[name="players"]').val(set.players);
+                if (set.players.length > 1) $(setClone).find('.set').addClass('border');
+                $('#set-container').append(setClone);
+            }
+            $('#generator .selectpicker').selectpicker();
+        }
+        loadPreset(presets["Default"]);
+
+        $("#generator-form").on("submit", e => {
+            e.preventDefault();
+            const x = JSON.parse(JSON.stringify(presets["Default"]));
+            x["wordpacks"] = JSON.parse(JSON.stringify(wordpacks));
+            console.log(generate(x));
+            return false;
+        });
     })();
-
-
-
-    document.getElementById("reset").addEventListener("click", () => {
-        localStorageData = {};
-        saveToLocalStorage();
-        location.reload();
-    });
-
-    document.getElementById("generate").addEventListener("click", () => {
-        const output = document.getElementById("output");
-        output.innerHTML = "Generated Sygils: ..."; // Add generation logic here
-    });
 });

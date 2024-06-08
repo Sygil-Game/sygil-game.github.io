@@ -1,7 +1,7 @@
 {
     "Default": {
         "schema_version": 1,
-        "players": [
+        "sets": [
             {
                 "name": "",
                 "groups": [
@@ -18,7 +18,7 @@
                         "num_words": 1
                     }
                 ],
-                "copies": 1
+                "players": 1
             }
         ]
     }
