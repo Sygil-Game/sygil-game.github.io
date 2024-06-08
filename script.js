@@ -140,7 +140,7 @@ $(document).ready(function () {
 
         // Fetch wordpacks
         await Promise.all(defaultWordpackNames.map(async wordpackName => {
-            const response = await fetch(`wordpacks/${wordpackName}.txt`);
+            const response = await fetch(`/static/wordpacks/${wordpackName}.txt`);
             const text = await response.text();
             wordpackRaws[wordpackName] = text;
             parseWordpack(wordpackName);
@@ -316,10 +316,11 @@ $(document).ready(function () {
             $("#generator-output").empty().append(`<md-block>${markdown}</md-block>`);
         }
         function updateGeneratorInput() {
+            const sets = getPresetFromForm()
             overwrite(generator_input, {
                 schema_version: CURRENT_SCHEMA_VERSION,
-                sets: getPresetFromForm(),
-                wordpacks: JSON.parse(JSON.stringify(wordpacks))
+                sets: sets,
+                wordpacks: _.pick(wordpacks, generator_input.sets.flatMap(set => set.groups.flatMap(group => group.wordpacks))) // Filter for only relevant wordpacks
             });
         }
         $("#generator-form").on("change", updateGeneratorInput);
