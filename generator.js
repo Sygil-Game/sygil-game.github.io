@@ -26,8 +26,7 @@ function generate_v1(generator_input) {
 
                 // Sample
                 if (choices.length < group["num_words"]) {
-                    console.error("Cannot generate " + group["num_words"] + " unique words from wordpacks " + group["wordpacks"] + (generator_input["sets"].length == 1 ? "" : " (" + player_output["name"] + ")") + ". Please reduce the number of words or add more wordpacks.");
-                    return;
+                    throw new Error("Cannot generate " + group["num_words"] + " unique words from wordpacks " + JSON.stringify(group["wordpacks"]) + (generator_input["sets"].length == 1 ? "" : " (" + player_output["name"] + ")") + ". Please reduce the number of words or add more wordpacks.");
                 }
                 player_output["words"] = player_output["words"].concat(_.sample(choices, group["num_words"]));
             });

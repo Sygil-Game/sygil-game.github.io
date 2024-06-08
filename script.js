@@ -224,26 +224,6 @@ $(document).ready(function () {
         const presets = await fetch('presets.json').then(response => response.json());
 
         /* Generator */
-
-        // Load a preset into the generator
-        function loadPreset(preset) {
-            for (const set of preset.sets) {
-                const setClone = $('#set-template').prop('content').cloneNode(true);
-                for (const group of set.groups) {
-                    const innerClone = $(setClone).find('#group-template').prop('content').cloneNode(true);
-                    $(innerClone).find('[name="num_words"]').val(group.num_words);
-                    updateWordpackSelect($(innerClone).find('[name="wordpacks"]'));
-                    $(innerClone).find('[name="wordpacks"]').val(group.wordpacks);
-                    $(setClone).find('.group-container').append(innerClone);
-                }
-                $(setClone).find('[name="players"]').val(set.players);
-                if (set.players.length > 1) $(setClone).find('.set').addClass('border');
-                $('#set-container').append(setClone);
-            }
-            $('#generator .selectpicker').selectpicker();
-        }
-        loadPreset(presets["Default"]);
-
         // Clone one object to another, overwriting it.
         // Used for when you need to preserve the target object instead of creating a new one. (i.e. for proxies)
         function overwrite(target, source) {
@@ -252,15 +232,9 @@ $(document).ready(function () {
             return target;
         }
 
-        // Assert helper
-        function assert(value, expected) {
-            if (value !== expected) throw new Error(`Expected ${expected} but got ${value}`);
-            return value;
-        }
-
         // Function to convert the current form data to a preset
         function getPresetFromForm() {
-            const formData = $("#generator-form").find("fieldset").map((i, el) => [$(el).find("*[name]").serializeArray()]).get();
+            const formData = $("#generator-form").serializeFieldsets();
 
             try {
                 return formData.map(set => {
@@ -279,7 +253,7 @@ $(document).ready(function () {
                     while ((num_words = next("num_words", true)) !== false) {
                         out.groups.push({
                             "num_words": parseInt(num_words),
-                            "wordpacks": [next("wordpacks")]
+                            "wordpacks": next("wordpacks")
                         });
                     }
                     out.players = parseInt(next("players"));
@@ -290,7 +264,7 @@ $(document).ready(function () {
             }
         }
 
-        const generator_input = syncToLocalStorage("generator_input");
+        const generator_input = syncToLocalStorage("generator_input", presets["Default"]);
         const generator_output = syncToLocalStorage("generator_output", {
             output: [],
             options: {
@@ -308,19 +282,44 @@ $(document).ready(function () {
         $("#one-line").prop("checked", generator_output["options"]["oneLine"]);
         $("#group-by-wordpack").prop("checked", generator_output["options"]["groupByWordpack"]);
 
+        // Load a preset into the generator
+        function loadPreset(preset) {
+            $('#set-container').empty();
+            for (const set of preset.sets) {
+                const setClone = $('#set-template').prop('content').cloneNode(true);
+                for (const group of set.groups) {
+                    const innerClone = $('#group-template').prop('content').cloneNode(true);
+                    $(innerClone).find('[name="num_words"]').val(group.num_words);
+                    updateWordpackSelect($(innerClone).find('[name="wordpacks"]'));
+                    $(innerClone).find('[name="wordpacks"]').val(group.wordpacks);
+                    $(setClone).find('.group-container').append(innerClone);
+                }
+                $(setClone).find('[name="players"]').val(set.players);
+                if (set.players.length > 1) $(setClone).find('.set').addClass('border');
+                $('#set-container').append(setClone);
+            }
+            $('#generator .selectpicker').selectpicker();
+        }
+        loadPreset(generator_input);
+
         let markdown = "";
         function render() {
             markdown = renderOutput(generator_output);
             $("#generator-output").empty().append(`<md-block>${markdown}</md-block>`);
         }
-        $("#generator-form").on("submit", e => {
-            e.preventDefault();
-            const preset = getPresetFromForm();
+        function updateGeneratorInput() {
             overwrite(generator_input, {
                 schema_version: CURRENT_SCHEMA_VERSION,
-                sets: preset,
+                sets: getPresetFromForm(),
                 wordpacks: JSON.parse(JSON.stringify(wordpacks))
             });
+        }
+        $("#generator-form").on("change", () => {
+            updateGeneratorInput();
+        });
+        $("#generator-form").on("submit", e => {
+            e.preventDefault();
+            updateGeneratorInput();
             generator_output["output"] = generate(generator_input);
             render();
             $("#generator-output-container").fadeIn();
@@ -344,6 +343,12 @@ $(document).ready(function () {
             url_parts.push("i=" + compressUrlSafe(JSON.stringify(generator_input)))
             if (generator_output["output"].length > 0) url_parts.push("o=" + compressUrlSafe(JSON.stringify(generator_output)))
             await navigator.clipboard.writeText(`${window.location.href}?${url_parts.join("&")}`);
+        });
+
+        $("body").on("click", ".add-group", function () {
+            const setIndex = $(this).closest(".set").index();
+            generator_input.sets[setIndex].groups.push({ num_words: null, wordpacks: [""] });
+            loadPreset(generator_input);
         });
     })();
 });
