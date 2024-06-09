@@ -100,20 +100,8 @@ $(document).ready(function () {
 
     // Async code that depends on fetched resources
     (async () => {
-        /**
-         * Fetch list of filepaths from a directory URL
-         * @param {string} url The URL of the directory
-         * @returns {Promise<string[]>} A promise that resolves to an array of filepaths
-         */
-        async function fetchFilesFromDirectory(url) {
-            const text = await fetch(url).then(response => response.text());
-            return Array.from((new DOMParser()).parseFromString(text, 'text/html').querySelectorAll('a'))
-                .map(link => link.getAttribute('href'))
-                .filter(href => href && !href.endsWith('/'));
-        }
-
         /* Wordpacks */
-        const defaultWordpackNames = (await fetchFilesFromDirectory('/static/wordpacks/')).map(file => file.split('/').pop().split('.')[0]);
+        const defaultWordpackNames = (await fetch('/static/wordpacks/wordpacks.json').then(response => response.json())).wordpacks;
         const wordpacks = syncToLocalStorage('wordpacks');
         const wordpackRaws = syncToLocalStorage('wordpackRaws');
         /**
@@ -132,12 +120,13 @@ $(document).ready(function () {
         }
 
         // Fetch wordpacks
-        await Promise.all(defaultWordpackNames.map(async wordpackName => {
+        (await Promise.all(defaultWordpackNames.map(async wordpackName => {
             const response = await fetch(`/static/wordpacks/${wordpackName}.txt`);
-            const text = await response.text();
+            return [wordpackName, await response.text()];
+        }))).map(([wordpackName, text]) => { // In 2 steps to preserve order
             wordpackRaws[wordpackName] = text;
             parseWordpack(wordpackName);
-        }));
+        });
 
         // Add wordpacks to the given dropdown
         function updateWordpackSelect(el) {
