@@ -1,10 +1,39 @@
 const CURRENT_SCHEMA_VERSION = 1;
 
+class BundledGeneratorError extends Error {
+    constructor(errors) {
+        if (errors.length === 0) throw new Error("No errors to bundle");
+        if (errors.length === 1) super(errors[0].message);
+        else super("Multiple errors occurred while generating:\n\n" + errors.map(error => error.message).join("\n\n"));
+        this.errors = errors;
+    }
+}
+
+class NotEnoughWordsError extends Error {
+    constructor(generator_input, set_i, group_i) {
+        const num_words = generator_input["sets"][set_i]["groups"][group_i]["num_words"];
+        const wordpacks = generator_input["sets"][set_i]["groups"][group_i]["wordpacks"];
+        super("Cannot generate " + num_words + " unique words from wordpacks " +
+            JSON.stringify(wordpacks) + ". Please reduce the number of words or add more wordpacks.");
+        this.name = "NotEnoughWordsError";
+        this.generator_input = generator_input;
+        this.set_i = set_i;
+        this.group_i = group_i;
+        this.num_words = num_words;
+        this.wordpacks = wordpacks;
+        this.wordpacks_word_count = wordpacks.map(wordpack => generator_input["wordpacks"][wordpack].length).reduce((a, b) => a + b, 0);
+        if (wordpacks.length == 0) this.validation_message = "No wordpacks selected.";
+        else this.validation_message = `These wordpacks only have ${this.wordpacks_word_count} word${this.wordpacks_word_count == 1 ? "" : "s"}.`;
+    }
+}
+
+
 function generate_v1(generator_input) {
     const generator_output = [];
+    const errors = [];
     generator_input["sets"].forEach((set, set_i) => {
         for (let player_i = 0; player_i < set["players"]; player_i++) {
-            const player_output = {words: []};
+            const player_output = { words: [] };
 
             // Name logic
             if (set["name"]) player_output["name"] = set["name"];
@@ -26,13 +55,14 @@ function generate_v1(generator_input) {
 
                 // Sample
                 if (choices.length < group["num_words"]) {
-                    throw new Error("Cannot generate " + group["num_words"] + " unique words from wordpacks " + JSON.stringify(group["wordpacks"]) + (generator_input["sets"].length == 1 ? "" : " (" + player_output["name"] + ")") + ". Please reduce the number of words or add more wordpacks.");
+                    errors.push(new NotEnoughWordsError(generator_input, set_i, group_i));
                 }
                 player_output["words"] = player_output["words"].concat(_.sample(choices, group["num_words"]));
             });
             generator_output.push(player_output);
         }
     });
+    if (errors.length > 0) throw new BundledGeneratorError(errors);
     return generator_output;
 }
 

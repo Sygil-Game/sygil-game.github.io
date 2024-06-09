@@ -53,3 +53,8 @@ html[data-bs-theme="dark"] blockquote {
 .bootstrap-select .no-results {
     background: unset;
 }
+
+/* Hide the little arrow on the Bootstrap Select dropdown when it's invalid, since the invalid symbol is there instead */
+.dropdown-toggle.is-invalid::after {
+    display: none;
+}

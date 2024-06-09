@@ -30,7 +30,9 @@ $(document).ready(function () {
                         liveSearch: true,
                         noneSelectedText: "Select a wordpack",
                         noneResultsText: 'No wordpacks found matching "{0}"',
-                        selectOnTab: true
+                        selectOnTab: true,
+                        styleBase: 'form-control',
+                        style: ''
                     });
                     // Make sure we don't double-dip
                     $(this).removeClass('select-picker-X');
@@ -94,15 +96,6 @@ $(document).ready(function () {
     // Autofocus on the first input in a modal
     $('.modal').on('shown.bs.modal', function () {
         $(this).find('input').trigger('focus');
-    });
-
-    // Validate forms before submitting
-    $('.needs-validation').on('submit', function (e) {
-        if (!this.checkValidity()) {
-            e.preventDefault();
-            e.stopPropagation();
-        }
-        this.classList.add('was-validated');
     });
 
     // Async code that depends on fetched resources
@@ -287,13 +280,8 @@ $(document).ready(function () {
                 const setClone = $('#set-template').prop('content').cloneNode(true);
 
                 // Header
-                if (preset.sets.length > 1) {
-                    $(setClone).find('.set').addClass('border');
-                    $(setClone).find('.set-header').removeClass('d-none');
-                } else {
-                    $(setClone).find('.set').removeClass('border');
-                    $(setClone).find('.set-header').addClass('d-none');
-                }
+                $(setClone).find('.set').toggleClass('border', preset.sets.length > 1);
+                $(setClone).find('.set-header').toggleClass('d-none', !(preset.sets.length > 1));
 
                 for (const group of set.groups) {
                     const groupClone = $('#group-template').prop('content').cloneNode(true);
@@ -324,14 +312,54 @@ $(document).ready(function () {
             });
         }
         $("#generator-form").on("change", updateGeneratorInput);
-        $("#generator-form").on("submit", e => {
-            e.preventDefault();
+        $("#generator-form").on("submit", function (e) {
+            // Coerce invalid "players" fields to 1
+            $("#generator-form").find("[name='players']:invalid").each(function () { this.value = 1; });
+
             updateGeneratorInput();
-            generator_output["output"] = generate(generator_input);
+
+            // Do the builtin form validation, for stuff like the 'required' attribute
+            let isValid = true;
+            if (!this.checkValidity()) {
+                $("#generator-form").find(":invalid").addClass('is-invalid');
+                isValid = false;
+            }
+
+            // Now try to generate the output and see if we get any errors
+            let output;
+            try {
+                output = generate(generator_input);
+            } catch (error) {
+                // Handle all errors from the generator
+                if (error instanceof BundledGeneratorError) {
+                    isValid = false;
+                    for (const suberror of error.errors) {
+                        if (suberror instanceof NotEnoughWordsError) {
+                            // Get the relevant group's element using info from the error
+                            const groupElem = $(`#generator-form .set:nth-child(${suberror.set_i + 1}) .group:nth-child(${suberror.group_i + 1})`);
+                            // Show invalid text
+                            groupElem.children(":first").addClass("is-invalid");
+                            groupElem.find('.invalid-feedback').text(suberror.validation_message);
+                            // Make the wordpack dropdown invalid
+                            groupElem.find(".dropdown-toggle").addClass("is-invalid");//.removeClass("border");
+                        } else { throw suberror; }
+                    }
+                } else { throw error; }
+            }
+            // If at any point something was invalid, don't update the generator output
+            if (!isValid) return false;
+
+            // Update the generator output and render
+            generator_output["output"] = output;
             render();
             $("#generator-output-container").fadeIn();
             return false;
         });
+        // When an invalid form element is changed, remove the invalid styles (though it might still be invalid when Generate is clicked again)
+        $("#generator-form").on("change", ".is-invalid", function () {
+            $(this).find(".is-invalid").addBack(".is-invalid").removeClass("is-invalid");
+        });
+        // Keep the generator output options updated
         $("#generator-output-options").on("change", () => {
             generator_output["options"]["alphabetize"] = $("#alphabetize").is(":checked");
             generator_output["options"]["oneLine"] = $("#one-line").is(":checked");
@@ -339,7 +367,7 @@ $(document).ready(function () {
             render();
         });
         // Show output if initially loaded from localStorage
-        if (generator_output["output"].length > 0) {
+        if (generator_output["output"] && generator_output["output"].length > 0) {
             render();
             $("#generator-output-container").show();
         }

@@ -50,7 +50,7 @@
             <!-- Generator -->
             <div class="tab-pane" id="generator">
                 <div class="container mt-5 px-0 border rounded position-relative">
-                    <form id="generator-form">
+                    <form id="generator-form" novalidate>
                         <!-- Template for one set -->
                         <template id="set-template">
                             <div class="set rounded mb-3 p-2">
@@ -73,10 +73,10 @@
                                     <div class="group-container"></div>
                                     <hr class="my-2">
                                     <div class="d-flex align-items-center">
-                                        <label class="form-check-label">Players:</label>
+                                        <label class="form-check-label ms-2">Players:</label>
                                         <div class="p-2 me-auto">
-                                            <input type="number" min="1" step="1" class="form-control number-input"
-                                                name="players">
+                                            <input type="number" min="1" step="1" required
+                                                class="form-control number-input" name="players">
                                         </div>
                                         <button class="btn btn-secondary add-group" type="button">Add group</button>
                                     </div>
@@ -85,25 +85,27 @@
                         </template>
                         <!-- Template for one group -->
                         <template id="group-template">
-                            <div class="d-flex p-2 align-items-center group">
-                                <div class="col-1">
-                                    <input type="number" min="1" step="1" class="form-control number-input"
-                                        name="num_words">
-                                </div>
-                                <span class="mx-2">from</span>
-                                <div class="flex-grow-1 position-relative align-middle">
-                                    <select class="select-picker-X w-100" data-style="form-control border" multiple
-                                        name="wordpacks"></select>
-                                    <div class="position-absolute top-0 bottom-0 d-flex align-items-center"
-                                        style="right: 2em;">
-                                        <button class="btn p-0 select-picker-clear" type="button"><i
-                                                class="bi bi-x"></i></button>
+                            <div class="group">
+                                <div class="d-flex p-2 align-items-center">
+                                    <div class="col-1">
+                                        <input type="number" min="1" step="1" required class="form-control number-input"
+                                            name="num_words">
                                     </div>
+                                    <span class="mx-2">from</span>
+                                    <div class="flex-grow-1 position-relative align-middle">
+                                        <select class="select-picker-X w-100" data-style="form-control border" multiple
+                                            name="wordpacks"></select>
+                                        <div class="position-absolute top-0 bottom-0 d-flex align-items-center"
+                                            style="right: 2em;">
+                                            <button class="btn p-0 select-picker-clear" type="button"><i
+                                                    class="bi bi-x"></i></button>
+                                        </div>
+                                    </div>
+                                    <button class="btn btn-outline-danger ms-2 invisible delete-group" type="button"><i
+                                            class="bi bi-trash"></i></button>
                                 </div>
-                                <button class="btn btn-outline-danger ms-2 invisible delete-group" type="button"><i
-                                        class="bi bi-trash"></i></button>
+                                <div class="invalid-feedback mt-0"></div>
                             </div>
-
                         </template>
                         <!-- The actual body of the form -->
                         <div id="set-container" class="px-3 pt-3"></div>
@@ -155,7 +157,7 @@
         aria-hidden="true">
         <div class="modal-dialog">
             <div class="modal-content">
-                <form class="needs-validation" novalidate>
+                <form novalidate>
                     <div class="modal-header">
                         <h5 class="modal-title" id="new-wordpack-modal-label">New Wordpack</h5><button type="button"
                             class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
