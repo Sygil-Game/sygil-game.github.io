@@ -21,6 +21,7 @@
     <script src="https://cdn.jsdelivr.net/npm/observable-slim@0.1.6/observable-slim.min.js"></script>
     <script src="util.js"></script>
     <script src="generator.js"></script>
+    <script src="wordpacks.js" type="module"></script>
     <script src="script.js" type="module"></script>
 </head>
 
@@ -146,7 +147,10 @@
                     <button class="btn btn-outline-secondary" id="new-wordpack"><i class="bi bi-plus"></i></button>
                     <button class="btn btn-outline-danger" id="delete-wordpack"><i class="bi bi-trash"></i></button>
                 </div>
-                <textarea class="form-control" id="wordpack-content" rows="30"></textarea>
+                <div class="position-relative">
+                    <textarea class="form-control" id="wordpack-content" rows="30"></textarea>
+                    <button class="btn btn-outline-secondary position-absolute top-0 end-0 mt-2 me-2" id="wordpack-reset"><i class="bi bi-arrow-clockwise"></i></button>
+                </div>
             </div>
         </div>
         <i class="bi bi-floppy2-fill" id="save-icon"></i>

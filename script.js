@@ -101,45 +101,30 @@ $(document).ready(function () {
     // Async code that depends on fetched resources
     (async () => {
         /* Wordpacks */
-        const defaultWordpackNames = (await fetch('/static/wordpacks/wordpacks.json').then(response => response.json())).wordpacks;
-        const wordpacks = syncToLocalStorage('wordpacks');
-        const wordpackRaws = syncToLocalStorage('wordpackRaws');
-        /**
-         * Parse a wordpack, splitting it into a base Wordpack and an extended Wordpack+ if it has a === line.
-         * The raw wordpack must already be in wordpackRaws.
-         * @param {string} wordpackName The name of the wordpack
-         */
-        function parseWordpack(wordpackName) {
-            const lines = wordpackRaws[wordpackName].split("\n").map(line => line.trim()).filter(line => line);
-            if (lines.includes('===')) {
-                wordpacks[wordpackName] = lines.slice(0, lines.indexOf('==='));
-                wordpacks[`${wordpackName}+`] = lines.slice(0, lines.indexOf('===')).concat(lines.slice(lines.indexOf('===') + 1));
-            } else {
-                wordpacks[wordpackName] = lines;
-            }
-        }
+        const defaultWordpackNames = (await fetch('/static/wordpacks/wordpacks.json').then(response => response.json())).wordpacks
+            .filter(name => !(name in wordpacks.getAll(false)));
 
         // Fetch wordpacks
         (await Promise.all(defaultWordpackNames.map(async wordpackName => {
             const response = await fetch(`/static/wordpacks/${wordpackName}.txt`);
             return [wordpackName, await response.text()];
-        }))).map(([wordpackName, text]) => { // In 2 steps to preserve order
-            wordpackRaws[wordpackName] = text;
-            parseWordpack(wordpackName);
-        });
+        }))).map(([name, rawText]) => wordpacks.setDefault(name, rawText)); // In 2 steps to preserve order
 
         // Add wordpacks to the given dropdown
         function updateWordpackSelect(el) {
-            el = $(el);
-            el.empty();
-            Object.entries(wordpacks)
-                .filter(([name, content]) => !name.endsWith("+")) // Extended wordpacks aren't editable because you just edit the base one
-                .forEach(([name, content]) => { el.append(`<option>${name}</option>`); });
+            $(el).empty().append(Object.keys(wordpacks.getAll(false)).map(name => `<option>${name}</option>`)); // Extended wordpacks aren't editable because you just edit the base one
         }
         updateWordpackSelect("#wordpack-select");
+        $("#wordpack-reset").on("click", () => {
+            wordpacks.set($("#wordpack-select").val(), wordpacks.getDefault($("#wordpack-select").val()));
+            updateWordpackContent();
+        });
+        function updateWordpackResetButton() {
+            $("#wordpack-reset").toggle(wordpacks.isDefaultModified($("#wordpack-select").val()));
+        }
         function updateWordpackContent() {
-            $("#wordpack-content").val(wordpackRaws[$("#wordpack-select").val()]);
-            $("#wordpack-content").prop('disabled', defaultWordpackNames.includes($("#wordpack-select").val()));
+            $("#wordpack-content").val(wordpacks.getRaw($("#wordpack-select").val()));
+            updateWordpackResetButton();
         }
         updateWordpackContent();
         $("#wordpack-select").on("change", updateWordpackContent);
@@ -148,9 +133,10 @@ $(document).ready(function () {
         let typingTimer;
         const doneTypingInterval = 300;
         $("#wordpack-content").on("input", function () {
-            wordpackRaws[$("#wordpack-select").val()] = $("#wordpack-content").val();
-            parseWordpack($("#wordpack-select").val());
-            // Only show the same icon after the user has stopped typing
+            wordpacks.set($("#wordpack-select").val(), $("#wordpack-content").val());
+            updateWordpackResetButton();
+
+            // Only show the save icon after the user has stopped typing
             clearTimeout(typingTimer);
             typingTimer = setTimeout(function () {
                 if ($("#save-icon").css("display") == "none") { // Only animate if it's not already visible
@@ -167,14 +153,18 @@ $(document).ready(function () {
 
                 const name = $('#new-wordpack-name').val();
                 if (!name) return false;
-                if (name in wordpacks) {
+                if (name.endsWith("+")) {
+                    console.log("Wordpack names cannot end with a plus sign.");
+                    $('#new-wordpack-name').addClass('is-invalid');
+                    return false;
+                }
+                if (wordpacks.get(name)) {
                     console.log("A wordpack with the name " + name + " already exists.");
                     $('#new-wordpack-name').addClass('is-invalid');
                     return false;
                 }
 
-                wordpackRaws[name] = "";
-                parseWordpack(name);
+                wordpacks.set(name, "");
 
                 updateWordpackSelect("#wordpack-select");
                 $('#wordpack-select').val(name);
@@ -189,13 +179,9 @@ $(document).ready(function () {
             const select = $("#wordpack-select");
             bootbox.confirm(`Are you sure you want to delete the wordpack "${select.val()}"?`, (confirmed) => {
                 if (!confirmed) return;
-                delete wordpacks[select.val()];
-                delete wordpackRaws[select.val()];
-                if (`${select.val()}+` in wordpacks) {
-                    delete wordpacks[`${select.val()}+`];
-                    delete wordpackRaws[`${select.val()}+`];
-                }
+                wordpacks.remove(select.val());
                 updateWordpackSelect();
+                updateWordpackContent();
             });
         });
 
@@ -297,7 +283,7 @@ $(document).ready(function () {
             overwrite(generator_input, {
                 schema_version: CURRENT_SCHEMA_VERSION,
                 sets: sets,
-                wordpacks: _.pick(wordpacks, generator_input.sets.flatMap(set => set.groups.flatMap(group => group.wordpacks))) // Filter for only relevant wordpacks
+                wordpacks: wordpacks.getWordpacksFor(sets)
             });
         }
         $("#generator-form").on("change", updateGeneratorInput);

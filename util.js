@@ -8,9 +8,7 @@ const PREFIX = "sygil_"; // For localStorage keys
 const syncToLocalStorage = (key, defaultValue = {}) => {
     key = `${PREFIX}${key}`;
     const initialValue = localStorage.getItem(key) !== null ? JSON.parse(localStorage.getItem(key)) : defaultValue;
-    return ObservableSlim.create(initialValue, true, changes => {
-        localStorage.setItem(key, JSON.stringify(changes[0].proxy));
-    });
+    return ObservableSlim.create(initialValue, true, changes => localStorage.setItem(key, JSON.stringify(initialValue)));
 };
 
 // Clone of jQuery's serializeArray that groups by fieldset and includes blank fields (particularly empty multiselects).
