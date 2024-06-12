@@ -20,31 +20,6 @@ $(document).ready(function () {
         setDarkModeStatus(darkModeStatus);
     });
 
-    // Initialize select pickers whenever they're added
-    (new MutationObserver((mutations) => {
-        mutations.forEach((mutation) => {
-            if (mutation.addedNodes) mutation.addedNodes.forEach(node => {
-                $(node).find('.select-picker-X').addBack('.select-picker-X').each(function () {
-                    // Initialize select picker
-                    $(this).selectpicker({
-                        liveSearch: true,
-                        noneSelectedText: "Select a wordpack",
-                        noneResultsText: 'No wordpacks found matching "{0}"',
-                        selectOnTab: true,
-                        styleBase: 'form-control',
-                        style: ''
-                    });
-                    // Make sure we don't double-dip
-                    $(this).removeClass('select-picker-X');
-                    // Bind a click handler to the clear button
-                    $(this).parent().find('.select-picker-clear').on('click', () => {
-                        $(this).find('select').selectpicker('deselectAll');
-                    });
-                });
-            });
-        });
-    })).observe(document, { childList: true, subtree: true });
-
     // Save active tab in sessionStorage
     const storedTab = sessionStorage.getItem('currentTab');
     if (storedTab) {
@@ -54,6 +29,10 @@ $(document).ready(function () {
         let newTab = $(this).attr('href');
         sessionStorage.setItem('currentTab', newTab);
     });
+
+    // Enable popovers
+    const popoverTriggerList = document.querySelectorAll('[data-bs-toggle="popover"]')
+    const popoverList = [...popoverTriggerList].map(popoverTriggerEl => new bootstrap.Popover(popoverTriggerEl))
 
     // Replace all instances of 'Sygil(s)' with stylized spans
     function replaceSygil(rootNode) {
@@ -110,30 +89,60 @@ $(document).ready(function () {
             return [wordpackName, await response.text()];
         }))).map(([name, rawText]) => wordpacks.setDefault(name, rawText)); // In 2 steps to preserve order
 
-        // Add wordpacks to the given dropdown
-        function updateWordpackSelect(el) {
-            $(el).empty().append(Object.keys(wordpacks.getAll(false)).map(name => `<option>${name}</option>`)); // Extended wordpacks aren't editable because you just edit the base one
+        // Initialize wordpack selects whenever they're added
+        whenAdded('select.wordpack-select', function () {
+            // Make sure we don't double-dip
+            if ($(this).hasClass('wordpack-select-initialized')) return;
+            $(this).addClass('wordpack-select-initialized');
+            // Initialize select picker
+            $(this).selectpicker({
+                liveSearch: true,
+                noneSelectedText: "Select a wordpack",
+                noneResultsText: 'No wordpacks found matching "{0}"',
+                selectOnTab: true,
+                styleBase: 'form-control',
+                style: ''
+            });
+            // Add a clear button if requested
+            if ($(this).hasClass('wordpack-select-clear')) {
+                const clearButton = $('#select-picker-clear-template').prop('content').cloneNode(true);
+                $(clearButton).find('button').on('click', () => $(this).val("").selectpicker('refresh'));
+                $(this).parent().append(clearButton);
+            }
+            // For wordpack-view-select specifically, turn off border radius
+            if ($(this).attr('id') === 'wordpack-view-select') {
+                $(this).siblings('button').addClass('rounded-0');
+            }
+        });
+        // Add wordpacks to wordpack select dropdowns
+        function updateWordpackSelects() {
+            const newHTML = Object.keys(wordpacks.getAll(false)).map(name => `<option>${name}</option>`);
+            $("select.wordpack-select").each(function () {
+                $(this).empty().append(newHTML); // Extended wordpacks aren't editable because you just edit the base one
+                $(this).selectpicker('refresh');
+            });
         }
-        updateWordpackSelect("#wordpack-select");
+        updateWordpackSelects();
+
         $("#wordpack-reset").on("click", () => {
-            wordpacks.set($("#wordpack-select").val(), wordpacks.getDefault($("#wordpack-select").val()));
+            wordpacks.set($("#wordpack-view-select").val(), wordpacks.getDefault($("#wordpack-view-select").val()));
             updateWordpackContent();
         });
         function updateWordpackResetButton() {
-            $("#wordpack-reset").toggle(wordpacks.isDefaultModified($("#wordpack-select").val()));
+            $("#wordpack-reset").toggle(wordpacks.isDefaultModified($("#wordpack-view-select").val()));
         }
         function updateWordpackContent() {
-            $("#wordpack-content").val(wordpacks.getRaw($("#wordpack-select").val()));
+            $("#wordpack-content").val(wordpacks.getRaw($("#wordpack-view-select").val()));
             updateWordpackResetButton();
         }
         updateWordpackContent();
-        $("#wordpack-select").on("change", updateWordpackContent);
+        $("#wordpack-view-select").on("change", updateWordpackContent);
 
         // Save modifications to the wordpack content
         let typingTimer;
         const doneTypingInterval = 300;
         $("#wordpack-content").on("input", function () {
-            wordpacks.set($("#wordpack-select").val(), $("#wordpack-content").val());
+            wordpacks.set($("#wordpack-view-select").val(), $("#wordpack-content").val());
             updateWordpackResetButton();
 
             // Only show the save icon after the user has stopped typing
@@ -145,42 +154,59 @@ $(document).ready(function () {
             }, doneTypingInterval);
         });
 
-        // New wordpack button
-        $("#new-wordpack").on("click", () => {
-            $('#new-wordpack-modal').modal('show');
-            $('#new-wordpack-modal').on('submit', e => {
-                e.preventDefault();
+        // New wordpack popover
+        $('#new-wordpack-popover').on('show.bs.modal', function () {
+            $('#new-wordpack-base-on').val($("#wordpack-view-select").val()).selectpicker('refresh');
+        });
+        $('#new-wordpack-popover form').on('submit', function () {
+            // Validation
+            const invalidFeedback = $("#new-wordpack-name").siblings('.invalid-feedback')
+            invalidFeedback.text("");
+            let isValid = true;
+            if (!this.checkValidity()) {
+                $(this).find(":invalid").addClass('is-invalid');
+                isValid = false;
+            }
+            const name = $('#new-wordpack-name').val();
+            if (name.endsWith("+")) {
+                invalidFeedback.text("Wordpack names cannot end with a plus sign.");
+                $('#new-wordpack-name').addClass('is-invalid');
+                isValid = false;
+            }
+            if (wordpacks.get(name)) {
+                invalidFeedback.text(`A wordpack with the name "${name}" already exists.`);
+                $('#new-wordpack-name').addClass('is-invalid');
+                isValid = false;
+            }
+            invalidFeedback.toggleClass('d-none', invalidFeedback.text() == "");
+            if (!isValid) return false;
 
-                const name = $('#new-wordpack-name').val();
-                if (!name) return false;
-                if (name.endsWith("+")) {
-                    console.log("Wordpack names cannot end with a plus sign.");
-                    $('#new-wordpack-name').addClass('is-invalid');
-                    return false;
-                }
-                if (wordpacks.get(name)) {
-                    console.log("A wordpack with the name " + name + " already exists.");
-                    $('#new-wordpack-name').addClass('is-invalid');
-                    return false;
-                }
+            // Create the new wordpack and clear fields
+            const baseOn = $("#new-wordpack-base-on").val();
+            wordpacks.set(name, baseOn ? wordpacks.getRaw(baseOn) : "");
+            $("#new-wordpack-name").removeClass("is-invalid");
+            $("#new-wordpack-name").val("");
+            $("#new-wordpack-base-on").val("").selectpicker("refresh");
 
-                wordpacks.set(name, "");
+            updateWordpackSelects();
+            $('#wordpack-view-select').val(name).selectpicker("refresh");
+            updateWordpackContent();
 
-                updateWordpackSelect("#wordpack-select");
-                $('#wordpack-select').val(name);
-                updateWordpackContent();
-                $('#new-wordpack-modal').modal('hide');
-                return false; // Don't do the normal HTML form submission
-            });
+            $('#new-wordpack-popover').popoverX('hide');
+            return false;
+        });
+        // When an invalid form element is changed, remove the invalid styles (though it might still be invalid when Generate is clicked again)
+        $("#generator-form").on("change", ".is-invalid", function () {
+            $(this).find(".is-invalid").addBack(".is-invalid").removeClass("is-invalid");
         });
 
         // Delete wordpack button
         $("#delete-wordpack").on("click", () => {
-            const select = $("#wordpack-select");
+            const select = $("#wordpack-view-select");
             bootbox.confirm(`Are you sure you want to delete the wordpack "${select.val()}"?`, (confirmed) => {
                 if (!confirmed) return;
                 wordpacks.remove(select.val());
-                updateWordpackSelect();
+                updateWordpackSelects();
                 updateWordpackContent();
             });
         });
@@ -261,7 +287,7 @@ $(document).ready(function () {
                 for (const group of set.groups) {
                     const groupClone = $('#group-template').prop('content').cloneNode(true);
                     $(groupClone).find('[name="num_words"]').val(group.num_words);
-                    updateWordpackSelect($(groupClone).find('[name="wordpacks"]'));
+                    updateWordpackSelects();
                     $(groupClone).find('[name="wordpacks"]').val(group.wordpacks);
                     if (set.groups.length > 1) $(groupClone).find('.delete-group').removeClass('invisible');
                     $(setClone).find('.group-container').append(groupClone);
@@ -270,6 +296,7 @@ $(document).ready(function () {
 
                 $('#set-container').append(setClone);
             }
+            updateWordpackSelects();
         }
         loadPreset(generator_input);
 

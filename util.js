@@ -36,3 +36,17 @@ jQuery.fn.extend({
         );
     }
 });
+
+// Helper to run a function whenever new nodes matching a selector are added to the DOM
+function whenAdded(selector, callback) {
+    const observer = new MutationObserver(mutations => {
+        mutations.forEach(mutation => {
+            if (mutation.addedNodes) mutation.addedNodes.forEach(node => {
+                $(node).find(selector).addBack(selector).each(callback);
+            });
+        });
+    });
+    observer.observe(document, { childList: true, subtree: true });
+    $(document.body).find(selector).addBack(selector).each(callback);
+    return observer;
+}

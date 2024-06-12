@@ -10,15 +10,19 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-select@1.13.18/dist/css/bootstrap-select.min.css"
         rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/gh/kartik-v/bootstrap-popover-x@1.5.4/css/bootstrap-popover-x.min.css"
+        media="all" rel="stylesheet" type="text/css" />
     <link rel="stylesheet" type="text/css" href="style.css">
 
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/underscore@stable/underscore-umd-min.js"></script>
     <script type="module" src="https://md-block.verou.me/md-block.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap-select@1.14.0-beta3/dist/js/bootstrap-select.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap-select@1.14.0-beta2/dist/js/bootstrap-select.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/bootbox.js/6.0.0/bootbox.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/observable-slim@0.1.6/observable-slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/kartik-v/bootstrap-popover-x@1.5.4/js/bootstrap-popover-x.min.js"
+        type="text/javascript"></script>
     <script src="util.js"></script>
     <script src="generator.js"></script>
     <script src="wordpacks.js" type="module"></script>
@@ -93,14 +97,9 @@
                                             name="num_words">
                                     </div>
                                     <span class="mx-2">from</span>
-                                    <div class="flex-grow-1 position-relative align-middle">
-                                        <select class="select-picker-X w-100" data-style="form-control border" multiple
-                                            name="wordpacks"></select>
-                                        <div class="position-absolute top-0 bottom-0 d-flex align-items-center"
-                                            style="right: 2em;">
-                                            <button class="btn p-0 select-picker-clear" type="button"><i
-                                                    class="bi bi-x"></i></button>
-                                        </div>
+                                    <div class="flex-grow-1 align-middle position-relative">
+                                        <select class="w-100 wordpack-select wordpack-select-clear"
+                                            data-style="form-control border" multiple name="wordpacks"></select>
                                     </div>
                                     <button class="btn btn-outline-danger ms-2 invisible delete-group" type="button"><i
                                             class="bi bi-trash"></i></button>
@@ -142,47 +141,49 @@
             <!-- Wordpacks -->
             <div class="tab-pane" id="wordpacks">
                 <div class="input-group mb-3">
-                    <label class="input-group-text" for="wordpack-select">Wordpack:</label>
-                    <select class="form-select" id="wordpack-select"></select>
-                    <button class="btn btn-outline-secondary" id="new-wordpack"><i class="bi bi-plus"></i></button>
+                    <label class="input-group-text" for="wordpack-view-select">Wordpack:</label>
+                    <select class="flex-grow-1 wordpack-select" id="wordpack-view-select"></select>
+                    <button class="btn btn-outline-secondary" id="new-wordpack" data-toggle="popover-x"
+                        data-target="#new-wordpack-popover" data-placement="auto-bottom"><i
+                            class="bi bi-plus"></i></button>
+                    <div id="new-wordpack-popover" class="popover popover-x popover-default">
+                        <div class="popover-header popover-title bg-body-secondary d-flex">
+                            <p class="text-body m-0">Create New Workpack</p>
+                            <button type="button" class="btn-close ms-auto" data-dismiss="popover-x"></button>
+                        </div>
+                        <form novalidate>
+                            <div class="popover-body popover-content">
+                                <label for="new-wordpack-name">Name:</label>
+                                <input type="text" id="new-wordpack-name" class="form-control w-100"
+                                    placeholder="New wordpack name" required>
+                                <div class="invalid-feedback"></div>
+                                <br>
+                                <label for="new-wordpack-base-on">Base on:</label>
+                                <select id="new-wordpack-base-on"
+                                    class="w-100 wordpack-select wordpack-select-clear"></select>
+                            </div>
+                            <div class="popover-footer bg-body-secondary border-secondary-subtle">
+                                <button type="button" class="btn btn-secondary" data-dismiss="popover-x">Cancel</button>
+                                <input type="submit" class="btn btn-primary ms-auto" value="Create">
+                            </div>
+                        </form>
+                    </div>
                     <button class="btn btn-outline-danger" id="delete-wordpack"><i class="bi bi-trash"></i></button>
                 </div>
                 <div class="position-relative">
                     <textarea class="form-control" id="wordpack-content" rows="30"></textarea>
-                    <button class="btn btn-outline-secondary position-absolute top-0 end-0 mt-2 me-2" id="wordpack-reset"><i class="bi bi-arrow-clockwise"></i></button>
+                    <button class="btn btn-outline-secondary position-absolute top-0 end-0 mt-2 me-2"
+                        id="wordpack-reset"><i class="bi bi-arrow-clockwise"></i></button>
                 </div>
             </div>
         </div>
         <i class="bi bi-floppy2-fill" id="save-icon"></i>
     </div>
-
-    <!-- Modals -->
-    <div class="modal fade" id="new-wordpack-modal" tabindex="-1" aria-labelledby="new-wordpack-modal-label"
-        aria-hidden="true">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <form novalidate>
-                    <div class="modal-header">
-                        <h5 class="modal-title" id="new-wordpack-modal-label">New Wordpack</h5><button type="button"
-                            class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                    </div>
-                    <div class="modal-body">
-                        <label for="new-wordpack-name">Name:</label>
-                        <input type="text" id="new-wordpack-name" class="form-control" placeholder="New wordpack name"
-                            required>
-                        <div class="invalid-feedback"> A wordpack with this name already exists.</div>
-                        <br>
-                        <label for="new-wordpack-base-on">Base on:</label>
-                        <select id="new-wordpack-base-on" class="form-select"></select>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                        <input type="submit" class="btn btn-primary" value="Create">
-                    </div>
-                </form>
-            </div>
+    <template id="select-picker-clear-template">
+        <div class="position-absolute top-0 bottom-0 d-flex align-items-center" style="right: 2em;">
+            <button class="btn p-0 select-picker-clear" type="button"><i class="bi bi-x"></i></button>
         </div>
-    </div>
+    </template>
 </body>
 
 </html>
