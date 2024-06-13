@@ -129,6 +129,7 @@ $(document).ready(function () {
 
         function updateWordpackContent() {
             $("#wordpack-content").val(wordpacks.getRaw($("#wordpack-view-select").val()));
+            $("#delete-wordpack").prop("disabled", !wordpacks.get($("#wordpack-view-select").val()));
             updateWordpackCornerButtons();
         }
         updateWordpackContent();

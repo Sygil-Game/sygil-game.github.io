@@ -62,3 +62,7 @@ html[data-bs-theme="dark"] blockquote {
 #wordpack-corner-buttons button:not(.btn-outline-success) {
     transition: 0.3s;
 }
+
+.btn {
+    --bs-btn-disabled-opacity: 0.3;
+}
