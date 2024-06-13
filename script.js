@@ -218,12 +218,11 @@ $(document).ready(function () {
             const name = validateWordpackName(this);
             if (!name) return false;
 
-            // Create the new wordpack and clear fields
+            // Create the new wordpack
             const baseOn = $("#new-wordpack-base-on").val();
             wordpacks.set(name, baseOn ? wordpacks.getRaw(baseOn) : "");
-            $(this).find("[name='wordpack-name']").removeClass("is-invalid").val("");
-            $("#new-wordpack-base-on").val("").selectpicker("refresh");
 
+            $(this).clearInputs();
             updateWordpackSelects();
             $('#wordpack-view-select').val(name).selectpicker("refresh");
             updateWordpackContent();
@@ -273,9 +272,7 @@ $(document).ready(function () {
                     wordpacks.set(name, fileContents[i]);
                 }
 
-                // Clear fields
-                $(this).find("[name='wordpack-file']").val(null).change(); // Trigger the change event so the overwrite checkbox is handled
-
+                $(this).clearInputs();
                 updateWordpackSelects();
                 $('#wordpack-view-select').val(name).selectpicker("refresh"); // Set to last imported wordpack
                 updateWordpackContent();

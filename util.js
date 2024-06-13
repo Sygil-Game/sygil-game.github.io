@@ -50,3 +50,32 @@ function whenAdded(selector, callback) {
     $(document.body).find(selector).addBack(selector).each(callback);
     return observer;
 }
+
+// Clear all input children
+jQuery.fn.extend({
+    clearInputs: function () {
+        jQuery(this).find(':input').each(function () {
+            switch (this.type) {
+                case 'password':
+                case 'text':
+                case 'textarea':
+                case 'file':
+                case 'select-one':
+                case 'select-multiple':
+                case 'date':
+                case 'number':
+                case 'tel':
+                case 'email':
+                    jQuery(this).val('');
+                    break;
+                case 'checkbox':
+                case 'radio':
+                    this.checked = false;
+                    break;
+            }
+            jQuery(this).selectpicker("refresh"); // Refresh selectpicker if present; if not this does nothing
+            jQuery(this).removeClass(["is-invalid", "is-valid"]);
+            jQuery(this).trigger("change");
+        });
+    }
+});
