@@ -73,9 +73,10 @@ $(document).ready(function () {
     })).observe(document, { childList: true, subtree: true });
 
     // Autofocus on the first input in a modal
-    $('.modal').on('shown.bs.modal', function () {
-        $(this).find('input').trigger('focus');
-    });
+    $('.modal').on('shown.bs.modal', function () { $(this).find('input').trigger('focus'); });
+
+    // Initialize tooltips
+    whenAdded('[data-bs-toggle="tooltip"]', function () { new bootstrap.Tooltip(this) });
 
     // Async code that depends on fetched resources
     (async () => {
@@ -126,26 +127,54 @@ $(document).ready(function () {
         }
         updateWordpackSelects();
 
-        $("#wordpack-reset").on("click", () => {
-            wordpacks.set($("#wordpack-view-select").val(), wordpacks.getDefault($("#wordpack-view-select").val()));
-            updateWordpackContent();
-        });
-        function updateWordpackResetButton() {
-            $("#wordpack-reset").toggle(wordpacks.isDefaultModified($("#wordpack-view-select").val()));
-        }
         function updateWordpackContent() {
             $("#wordpack-content").val(wordpacks.getRaw($("#wordpack-view-select").val()));
-            updateWordpackResetButton();
+            updateWordpackCornerButtons();
         }
         updateWordpackContent();
         $("#wordpack-view-select").on("change", updateWordpackContent);
+
+        // Corner buttons
+        function updateWordpackCornerButtons() {
+            const selectedWordpack = $("#wordpack-view-select").val();
+            $("#wordpack-corner-buttons").toggleClass("d-none", !selectedWordpack);
+            if (selectedWordpack) {
+                $("#wordpack-corner-buttons button[name='reset']").toggleClass("d-none", !wordpacks.isDefault(selectedWordpack));
+                $("#wordpack-corner-buttons button[name='reset']").prop("disabled", !wordpacks.isDefaultModified(selectedWordpack));
+                $("#wordpack-corner-buttons button[name='reset'] + button").toggleClass("rounded-start", !wordpacks.isDefault(selectedWordpack));
+            }
+        }
+        function animateSuccess(button) {
+            $(button).addClass("btn-outline-success");
+            setTimeout(() => $(button).removeClass("btn-outline-success"), 500);
+        }
+        $("#wordpack-corner-buttons button[name='reset']").on("click", function () {
+            wordpacks.set($("#wordpack-view-select").val(), wordpacks.getDefault($("#wordpack-view-select").val()));
+            animateSuccess(this);
+            updateWordpackContent();
+        });
+        $("#wordpack-corner-buttons button[name='link']").on("click", function () {
+            const link = `${window.location.origin}/?share-wordpack=${compressUrlSafe($("#wordpack-view-select").val())}`;
+            // TODO actually make this link work
+            navigator.clipboard.writeText(link).then(() => animateSuccess(this))
+        });
+        $("#wordpack-corner-buttons button[name='copy']").on("click", function () {
+            navigator.clipboard.writeText($("#wordpack-content").val()).then(() => animateSuccess(this))
+        });
+        $("#wordpack-corner-buttons button[name='download']").on("click", function () {
+            const a = document.createElement("a");
+            a.href = URL.createObjectURL(new Blob([$("#wordpack-content").val()], { type: "text/plain" }));
+            a.download = `${$("#wordpack-view-select").val()}.txt`;
+            a.click();
+            animateSuccess(this);
+        });
 
         // Save modifications to the wordpack content
         let typingTimer;
         const doneTypingInterval = 300;
         $("#wordpack-content").on("input", function () {
             wordpacks.set($("#wordpack-view-select").val(), $("#wordpack-content").val());
-            updateWordpackResetButton();
+            updateWordpackCornerButtons();
 
             // Only show the save icon after the user has stopped typing
             clearTimeout(typingTimer);

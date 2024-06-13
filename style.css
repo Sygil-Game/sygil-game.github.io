@@ -58,3 +58,7 @@ html[data-bs-theme="dark"] blockquote {
 .dropdown-toggle.is-invalid::after {
     display: none;
 }
+
+#wordpack-corner-buttons button:not(.btn-outline-success) {
+    transition: 0.3s;
+}

@@ -181,8 +181,11 @@
                                 <input class="form-control form-control-sm mb-2" type="file" id="import-wordpack-file"
                                     name="wordpack-file" multiple required accept=".txt">
                                 <div class="form-check invisible">
-                                    <input class="form-check-input" type="checkbox" id="import-wordpack-overwrite-checkbox">
-                                    <label class="form-check-label text-danger" for="import-wordpack-overwrite-checkbox">Overwrite wordpacks <span></span>?</label>
+                                    <input class="form-check-input" type="checkbox"
+                                        id="import-wordpack-overwrite-checkbox">
+                                    <label class="form-check-label text-danger"
+                                        for="import-wordpack-overwrite-checkbox">Overwrite wordpacks
+                                        <span></span>?</label>
                                 </div>
                             </div>
                             <div class="popover-footer bg-body-secondary border-secondary-subtle">
@@ -195,8 +198,20 @@
                 </div>
                 <div class="position-relative">
                     <textarea class="form-control" id="wordpack-content" rows="30"></textarea>
-                    <button class="btn btn-outline-secondary position-absolute top-0 end-0 mt-2 me-2"
-                        id="wordpack-reset"><i class="bi bi-arrow-clockwise"></i></button>
+                    <div class="btn-group position-absolute top-0 end-0 mt-2 me-2 d-none" id="wordpack-corner-buttons">
+                        <button class="btn btn-outline-secondary" type="button" name="reset" data-bs-toggle="tooltip"
+                            data-bs-placement="bottom" data-bs-title="Reset to default"><i
+                                class="bi bi-arrow-clockwise"></i></button>
+                        <button class="btn btn-outline-secondary" type="button" name="link" data-bs-toggle="tooltip"
+                            data-bs-placement="bottom" data-bs-title="Copy sharing link"><i
+                                class="bi bi-link-45deg"></i></button>
+                        <button class="btn btn-outline-secondary" type="button" name="copy" data-bs-toggle="tooltip"
+                            data-bs-placement="bottom" data-bs-title="Copy to clipboard"><i
+                                class="bi bi-clipboard"></i></button>
+                        <button class="btn btn-outline-secondary" type="button" name="download" data-bs-toggle="tooltip"
+                            data-bs-placement="bottom" data-bs-title="Download"><i
+                                class="bi bi-download"></i></button>
+                    </div>
                 </div>
             </div>
         </div>
