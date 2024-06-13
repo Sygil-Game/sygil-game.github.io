@@ -203,44 +203,51 @@ $(document).ready(function () {
         });
 
         // Import wordpack popover
+        function parseName(filename) { return filename.replace(/\..+$/, ""); }
         $('#import-wordpack-popover form [name="wordpack-file"]').on("change", function () {
-            // Set the wordpack name to the filename if it's not already set
-            const filename = $(this).prop("files")[0]?.name;
-            if (!filename) return;
-            const nameEl = $(this).closest("form").find("[name='wordpack-name']");
-            if (nameEl.val()) return;
-            nameEl.val(filename.replace(/\..+$/, ""));
-            validateWordpackName(this.closest("form"));
+            const names = Array.from($(this).prop("files")).map(file => parseName(file.name));
+            const overwriteCheckbox = $("#import-wordpack-overwrite-checkbox");
+            overwriteCheckbox.prop("checked", false);
+            const existingNames = names.filter(name => wordpacks.get(name));
+            overwriteCheckbox.parent().toggleClass("invisible", existingNames.length == 0);
+            $("label[for='import-wordpack-overwrite-checkbox'] span").text(`"${existingNames.join('", "')}"`);
         });
-        $('#import-wordpack-popover form').on('submit', function () {
-            // Validation
-            const name = validateWordpackName(this);
-            if (!name) return false;
-            // TODO file validation
-
-            // Read the file(s) - the rest of the function is async since it depends on this
-            const file = $(this).find("[name='wordpack-file']").prop("files")[0];
-            (async () => {
+        function readFile(file) {
+            return new Promise(function (resolve, reject) {
                 const reader = new FileReader();
-                let fileContent;
-                try {
-                    fileContent = await new Promise((resolve, reject) => {
-                        reader.onload = (event) => resolve(event.target.result);
-                        reader.onerror = (error) => reject(error);
-                        reader.readAsText(file);
-                    });
-                } catch (error) {
-                    console.error("Error reading file:", error);
-                    return;
+                reader.onload = () => resolve(reader.result);
+                reader.onerror = () => reject(reader);
+                reader.readAsText(file);
+            });
+        }
+        $('#import-wordpack-popover form').on('submit', function () {
+            // File reading is async but we need to return false immediately to prevent form submission, so we have an inner async wrapper
+            (async () => {
+                // Read files
+                const files = Array.from($(this).find("[name='wordpack-file']").prop("files"));
+                const names = files.map(file => parseName(file.name));
+                const fileContents = await Promise.all(files.map(readFile));
+
+                // Create wordpacks, handling duplicate names
+                let name;
+                for (let i = 0; i < names.length; i++) {
+                    name = names[i];
+                    if (!$(this).find("#import-wordpack-overwrite-checkbox").prop("checked")) {
+                        while (wordpacks.get(name)) {
+                            const regex = / \((\d+)\)$/;
+                            const match = regex.exec(name);
+                            const copyNum = match ? parseInt(match[1]) + 1 : 2;
+                            name = `${name.replace(regex, "")} (${copyNum})`;
+                        }
+                    }
+                    wordpacks.set(name, fileContents[i]);
                 }
 
-                // Import the wordpack and clear fields
-                wordpacks.set(name, fileContent);
-                $(this).find("[name='wordpack-name']").removeClass("is-invalid").val("");
-                $(this).find("[name='wordpack-file']").val(null);
+                // Clear fields
+                $(this).find("[name='wordpack-file']").val(null).change(); // Trigger the change event so the overwrite checkbox is handled
 
                 updateWordpackSelects();
-                $('#wordpack-view-select').val(name).selectpicker("refresh");
+                $('#wordpack-view-select').val(name).selectpicker("refresh"); // Set to last imported wordpack
                 updateWordpackContent();
 
                 $('#import-wordpack-popover').popoverX('hide');

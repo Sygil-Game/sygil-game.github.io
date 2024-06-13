@@ -176,15 +176,14 @@
                             <p class="text-body m-0">Import Wordpack</p>
                             <button type="button" class="btn-close ms-auto" data-dismiss="popover-x"></button>
                         </div>
-                        <form novalidate>
+                        <form>
                             <div class="popover-body popover-content">
                                 <input class="form-control form-control-sm mb-2" type="file" id="import-wordpack-file"
-                                    name="wordpack-file" multiple accept=".txt">
-                                <label for="import-wordpack-name">Name:</label>
-                                <input type="text" id="import-wordpack-name" class="form-control w-100"
-                                    placeholder="New wordpack name" name="wordpack-name" required>
-                                <div class="invalid-feedback"></div>
-                                <br>
+                                    name="wordpack-file" multiple required accept=".txt">
+                                <div class="form-check invisible">
+                                    <input class="form-check-input" type="checkbox" id="import-wordpack-overwrite-checkbox">
+                                    <label class="form-check-label text-danger" for="import-wordpack-overwrite-checkbox">Overwrite wordpacks <span></span>?</label>
+                                </div>
                             </div>
                             <div class="popover-footer bg-body-secondary border-secondary-subtle">
                                 <button type="button" class="btn btn-secondary" data-dismiss="popover-x">Cancel</button>
