@@ -116,9 +116,11 @@ $(document).ready(function () {
         });
         // Add wordpacks to wordpack select dropdowns
         function updateWordpackSelects() {
-            const newHTML = Object.keys(wordpacks.getAll(false)).map(name => `<option>${name}</option>`);
+            const newHTML = Object.keys(wordpacks.getAll(false)).map(name => `<option>${name}</option>`); // Extended wordpacks aren't editable because you just edit the base one
             $("select.wordpack-select").each(function () {
-                $(this).empty().append(newHTML); // Extended wordpacks aren't editable because you just edit the base one
+                const val = $(this).val(); // Save val and restore it (since we're temporarily nuking all the options)
+                $(this).empty().append(newHTML);
+                $(this).val(val);
                 $(this).selectpicker('refresh');
             });
         }
@@ -279,24 +281,29 @@ $(document).ready(function () {
             for (let i = 0; i < preset.sets.length; i++) {
                 const set = preset.sets[i];
                 const setClone = $('#set-template').prop('content').cloneNode(true);
-
-                // Header
-                $(setClone).find('.set').toggleClass('border', preset.sets.length > 1);
-                $(setClone).find('.set-header').toggleClass('d-none', !(preset.sets.length > 1));
-
-                for (const group of set.groups) {
-                    const groupClone = $('#group-template').prop('content').cloneNode(true);
-                    $(groupClone).find('[name="num_words"]').val(group.num_words);
-                    updateWordpackSelects();
-                    $(groupClone).find('[name="wordpacks"]').val(group.wordpacks);
-                    if (set.groups.length > 1) $(groupClone).find('.delete-group').removeClass('invisible');
-                    $(setClone).find('.group-container').append(groupClone);
-                }
-                $(setClone).find('[name="players"]').val(set.players);
-
+                const setElem = $(setClone).find('.set'); // Save a reference to the element, since adding the document fragment to the page makes interacting with it weird
                 $('#set-container').append(setClone);
+                // Header
+                setElem.toggleClass('border', preset.sets.length > 1);
+                setElem.find('.set-header').toggleClass('d-none', !(preset.sets.length > 1));
+                // Add all group clones first so we can update their wordpack selects
+                const groupElems = set.groups.map(() => {
+                    const groupClone = $('#group-template').prop('content').cloneNode(true);
+                    const groupElem = $(groupClone).find('.group');
+                    setElem.find('.group-container').append(groupClone);
+                    return groupElem;
+                });
+                updateWordpackSelects();
+                // Now populate values
+                for (let i = 0; i < set.groups.length; i++) {
+                    const group = set.groups[i];
+                    const groupElem = groupElems[i];
+                    groupElem.find('[name="num_words"]').val(group.num_words);
+                    groupElem.find('[name="wordpacks"]').val(group.wordpacks).selectpicker("refresh");
+                    if (set.groups.length > 1) groupElem.find('.delete-group').removeClass('invisible');
+                }
+                setElem.find('[name="players"]').val(set.players);
             }
-            updateWordpackSelects();
         }
         loadPreset(generator_input);
 
