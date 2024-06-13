@@ -160,34 +160,38 @@ $(document).ready(function () {
         $('#new-wordpack-popover').on('show.bs.modal', function () {
             $('#new-wordpack-base-on').val($("#wordpack-view-select").val()).selectpicker('refresh');
         });
-        $('#new-wordpack-popover form').on('submit', function () {
-            // Validation
-            const invalidFeedback = $("#new-wordpack-name").siblings('.invalid-feedback')
+        function validateWordpackName(form) {
+            const el = $(form).find("[name='wordpack-name']");
+            const invalidFeedback = el.siblings('.invalid-feedback')
             invalidFeedback.text("");
             let isValid = true;
-            if (!this.checkValidity()) {
-                $(this).find(":invalid").addClass('is-invalid');
+            if (!$(form)[0].checkValidity()) {
+                $(form).find(":invalid").addClass('is-invalid');
                 isValid = false;
             }
-            const name = $('#new-wordpack-name').val();
+            const name = el.val();
             if (name.endsWith("+")) {
                 invalidFeedback.text("Wordpack names cannot end with a plus sign.");
-                $('#new-wordpack-name').addClass('is-invalid');
+                el.addClass('is-invalid');
                 isValid = false;
             }
             if (wordpacks.get(name)) {
                 invalidFeedback.text(`A wordpack with the name "${name}" already exists.`);
-                $('#new-wordpack-name').addClass('is-invalid');
+                el.addClass('is-invalid');
                 isValid = false;
             }
             invalidFeedback.toggleClass('d-none', invalidFeedback.text() == "");
-            if (!isValid) return false;
+            return isValid ? name : false;
+        }
+        $('#new-wordpack-popover form').on('submit', function () {
+            // Validation
+            const name = validateWordpackName(this);
+            if (!name) return false;
 
             // Create the new wordpack and clear fields
             const baseOn = $("#new-wordpack-base-on").val();
             wordpacks.set(name, baseOn ? wordpacks.getRaw(baseOn) : "");
-            $("#new-wordpack-name").removeClass("is-invalid");
-            $("#new-wordpack-name").val("");
+            $(this).find("[name='wordpack-name']").removeClass("is-invalid").val("");
             $("#new-wordpack-base-on").val("").selectpicker("refresh");
 
             updateWordpackSelects();
@@ -197,6 +201,53 @@ $(document).ready(function () {
             $('#new-wordpack-popover').popoverX('hide');
             return false;
         });
+
+        // Import wordpack popover
+        $('#import-wordpack-popover form [name="wordpack-file"]').on("change", function () {
+            // Set the wordpack name to the filename if it's not already set
+            const filename = $(this).prop("files")[0]?.name;
+            if (!filename) return;
+            const nameEl = $(this).closest("form").find("[name='wordpack-name']");
+            if (nameEl.val()) return;
+            nameEl.val(filename.replace(/\..+$/, ""));
+            validateWordpackName(this.closest("form"));
+        });
+        $('#import-wordpack-popover form').on('submit', function () {
+            // Validation
+            const name = validateWordpackName(this);
+            if (!name) return false;
+            // TODO file validation
+
+            // Read the file(s) - the rest of the function is async since it depends on this
+            const file = $(this).find("[name='wordpack-file']").prop("files")[0];
+            (async () => {
+                const reader = new FileReader();
+                let fileContent;
+                try {
+                    fileContent = await new Promise((resolve, reject) => {
+                        reader.onload = (event) => resolve(event.target.result);
+                        reader.onerror = (error) => reject(error);
+                        reader.readAsText(file);
+                    });
+                } catch (error) {
+                    console.error("Error reading file:", error);
+                    return;
+                }
+
+                // Import the wordpack and clear fields
+                wordpacks.set(name, fileContent);
+                $(this).find("[name='wordpack-name']").removeClass("is-invalid").val("");
+                $(this).find("[name='wordpack-file']").val(null);
+
+                updateWordpackSelects();
+                $('#wordpack-view-select').val(name).selectpicker("refresh");
+                updateWordpackContent();
+
+                $('#import-wordpack-popover').popoverX('hide');
+            })();
+            return false;
+        });
+
         // When an invalid form element is changed, remove the invalid styles (though it might still be invalid when Generate is clicked again)
         $("#generator-form").on("change", ".is-invalid", function () {
             $(this).find(".is-invalid").addBack(".is-invalid").removeClass("is-invalid");
