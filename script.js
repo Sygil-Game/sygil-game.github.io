@@ -361,7 +361,7 @@ $(document).ready(function () {
             // Update the generator output and render
             generator_output["output"] = output;
             render();
-            $("#generator-output-container").fadeIn();
+            $("#generator-output-container").fadeIn(100);
             return false;
         });
         // When an invalid form element is changed, remove the invalid styles (though it might still be invalid when Generate is clicked again)
