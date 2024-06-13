@@ -374,6 +374,7 @@ $(document).ready(function () {
                 // Header
                 setElem.toggleClass('border', preset.sets.length > 1);
                 setElem.find('.set-header').toggleClass('d-none', !(preset.sets.length > 1));
+                setElem.find('[name="set_name"]').attr("placeholder", `Player ${i + 1}`);
                 // Add all group clones first so we can update their wordpack selects
                 const groupElems = set.groups.map(() => {
                     const groupClone = $('#group-template').prop('content').cloneNode(true);
