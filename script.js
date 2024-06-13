@@ -237,9 +237,17 @@ $(document).ready(function () {
             const names = Array.from($(this).prop("files")).map(file => parseName(file.name));
             const overwriteCheckbox = $("#import-wordpack-overwrite-checkbox");
             overwriteCheckbox.prop("checked", false);
+            const invalidNames = names.filter(name => name.endsWith("+"));
             const existingNames = names.filter(name => wordpacks.get(name));
-            overwriteCheckbox.parent().toggleClass("invisible", existingNames.length == 0);
-            $("label[for='import-wordpack-overwrite-checkbox'] span").text(`"${existingNames.join('", "')}"`);
+            
+            if (invalidNames.length > 0) {
+                bootbox.alert(`Wordpack names cannot end with a plus sign: "${invalidNames.join('", "')}"`);
+                $(this).val(''); // Clear the file input
+                overwriteCheckbox.parent().addClass("invisible");
+            } else {
+                overwriteCheckbox.parent().toggleClass("invisible", existingNames.length == 0);
+                $("label[for='import-wordpack-overwrite-checkbox'] span").text(`"${existingNames.join('", "')}"`);
+            }
         });
         function readFile(file) {
             return new Promise(function (resolve, reject) {
