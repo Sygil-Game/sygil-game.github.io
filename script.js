@@ -78,14 +78,6 @@ $(document).ready(function () {
     // Initialize tooltips
     whenAdded('[data-bs-toggle="tooltip"]', function () { new bootstrap.Tooltip(this) });
 
-    // Check if URL contains a wordpack share parameter
-    const urlParams = new URLSearchParams(window.location.search);
-    if (urlParams.has('share')) {
-        const shareData = JSON.parse(decompressUrlSafe(urlParams.get('share')));
-        createDocumentBrowser(shareData).css('max-height', '60vh').appendTo($('#importWordpackModal .modal-body'));
-        $('#importWordpackModal').modal('show');
-    }
-
     // Async code that depends on fetched resources
     (async () => {
         /* Wordpacks */
@@ -416,6 +408,38 @@ $(document).ready(function () {
         const urlParams = new URLSearchParams(window.location.search);
         if (urlParams.has("i")) overwrite(generator_input, JSON.parse(decompressUrlSafe(urlParams.get("i"))));
         if (urlParams.has("o")) overwrite(generator_output, JSON.parse(decompressUrlSafe(urlParams.get("o"))));
+        if (urlParams.has('share')) {
+            const shareData = JSON.parse(decompressUrlSafe(urlParams.get('share')));
+            const component = createDocumentBrowser(shareData).css('max-height', '60vh');
+            component.find('textarea').prop('disabled', true);
+            let hasDuplicates = false;
+            component.find('.nav-link').each(function () {
+                const tabName = $(this).data('tab-name');
+                if (wordpacks.get(tabName)) {
+                    console.log(`Wordpack ${tabName} already exists, so we'll delete it`);
+                    $(this).addClass('nav-link-danger');
+                    hasDuplicates = true;
+                }
+            });
+            $("#importWordpackModal .duplicate-warning").toggle(hasDuplicates);
+            component.appendTo($('#importWordpackModal .modal-body'));
+            $('#importWordpackModal').modal('show');
+            $('#importWordpackModal form').on('submit', function () {
+                shareData.forEach(({ name, content }) => wordpacks.setDefault(name, content));
+                updateWordpackSelects();
+                updateWordpackContent();
+                $('#importWordpackModal').modal('hide');
+                return false;
+            });
+
+            // Remove the share parameter from the URL when the modal is closed
+            $('#importWordpackModal').on('hidden.bs.modal', function () {
+                const url = new URL(window.location);
+                url.searchParams.delete('share');
+                window.history.pushState({}, "", url.toString());
+            });
+        }
+
         // Initialize generator output options
         $("#alphabetize").prop("checked", generator_output["options"]["alphabetize"]);
         $("#one-line").prop("checked", generator_output["options"]["oneLine"]);
