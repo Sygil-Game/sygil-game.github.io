@@ -80,8 +80,8 @@ html[data-bs-theme="dark"] blockquote {
 }
 
 .document-browser .nav-link.active {
-    z-index: 2;
     /* Needed so bottom-border works properly since margin-bottom is -1 */
+    z-index: 2;
 }
 
 .document-browser .nav-link:hover {
@@ -117,8 +117,8 @@ html[data-bs-theme="dark"] blockquote {
     --bs-nav-tabs-link-active-border-color: var(--bs-secondary);
     direction: rtl;
     border-bottom-width: 0;
-    padding-bottom: var(--bs-nav-tabs-border-width);
     /* Prevents scrollbar from appearing when unneeded */
+    padding-bottom: var(--bs-nav-tabs-border-width);
 }
 
 .document-browser .nav-tabs * {

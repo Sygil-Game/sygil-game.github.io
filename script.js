@@ -132,15 +132,36 @@ $(document).ready(function () {
                 $(this).val(val);
                 $(this).selectpicker('refresh');
             });
-            $("#wordpacks .document-browser").replaceWith(createDocumentBrowser(Object.keys(wordpacks.getAll(false)).map(name => ({ name, content: wordpacks.getRaw(name) }))));
+            rebuildWordpackDocumentBrowser();
         }
         updateWordpackSelects();
-        createDocumentBrowser(Object.keys(wordpacks.getAll(false)).map(name => ({ name, content: wordpacks.getRaw(name) }))).appendTo($("#wordpacks"));
-        $("#wordpack-view-select").val($("#wordpack-view-select option").first().val()).selectpicker("refresh");
+        $("#wordpack-view-select").val($("#wordpack-view-select option").first().val()).selectpicker("refresh"); // Select the first wordpack by default
 
-        function updateWordpackContent(showTab = true) {
-            if (showTab) $("#wordpacks .document-browser .nav-link[data-tab-name='" + $("#wordpack-view-select").val() + "']").tab("show");
-            $("#delete-wordpack").prop("disabled", !wordpacks.get($("#wordpack-view-select").val()));
+        // Create the wordpack document browser
+        function rebuildWordpackDocumentBrowser() {
+            const component = createDocumentBrowser(Object.keys(wordpacks.getAll(false)).map(name => ({ name, content: wordpacks.getRaw(name) })));
+            if ($("#wordpacks .document-browser").length) {
+                const selectedTab = $("#wordpacks .document-browser .nav-link.active").data("tab-name");
+                $("#wordpacks .document-browser").replaceWith(component);
+                if (component.find(`.nav-link[data-tab-name="${selectedTab}"]`).length) {
+                    component.find(`.nav-link[data-tab-name="${selectedTab}"]`).tab("show");
+                }
+            } else {
+                component.appendTo($("#wordpacks"));
+            }
+            return component;
+        }
+        rebuildWordpackDocumentBrowser();
+        whenAdded('#wordpacks .document-browser', (_, documentBrowser) => { // Automatically resize to fit in the window
+            $(window).on('resize', () => $(documentBrowser).css('max-height', `calc(100vh - ${$(documentBrowser).offset().top}px - 40px)`)).trigger('resize');
+        });
+
+        function updateWordpackContent(rebuild = true) {
+            if (rebuild) {
+                rebuildWordpackDocumentBrowser();
+                $("#wordpacks .document-browser .nav-link[data-tab-name='" + $("#wordpack-view-select").val() + "']").tab("show");
+            }
+            $("#delete-wordpack").prop("disabled", !!wordpacks.isDefault($("#wordpack-view-select").val()));
             updateWordpackCornerButtons();
         }
         updateWordpackContent();
@@ -192,7 +213,7 @@ $(document).ready(function () {
         // Save modifications to the wordpack content
         let typingTimer;
         const doneTypingInterval = 300;
-        $("#wordpacks .document-browser").on(".tab-pane.show textarea input", function () {
+        $("#wordpacks").on("input", ".document-browser .tab-pane.active textarea", function () {
             wordpacks.set($("#wordpack-view-select").val(), $("#wordpacks .document-browser .tab-pane.show textarea").val());
             updateWordpackCornerButtons();
 
