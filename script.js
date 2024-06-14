@@ -78,6 +78,14 @@ $(document).ready(function () {
     // Initialize tooltips
     whenAdded('[data-bs-toggle="tooltip"]', function () { new bootstrap.Tooltip(this) });
 
+    // Check if URL contains a wordpack share parameter
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.has('share')) {
+        const shareData = JSON.parse(decompressUrlSafe(urlParams.get('share')));
+        createLeftTabComponent(shareData).appendTo($('#importWordpackModal .modal-body'));
+        $('#importWordpackModal').modal('show');
+    }
+
     // Async code that depends on fetched resources
     (async () => {
         /* Wordpacks */
@@ -155,8 +163,12 @@ $(document).ready(function () {
             updateWordpackContent();
         });
         $("#wordpack-corner-buttons button[name='link']").on("click", function () {
-            const link = `${window.location.origin}/?share-wordpack=${compressUrlSafe($("#wordpack-view-select").val())}`;
-            // TODO actually make this link work
+            const shareData = [{
+                name: $("#wordpack-view-select").val(),
+                content: $("#wordpack-content").val(),
+                group: "Wordpacks"
+            }];
+            const link = `${window.location.origin}/?share=${compressUrlSafe(JSON.stringify(shareData))}`;
             navigator.clipboard.writeText(link).then(() => animateSuccess(this))
         });
         $("#wordpack-corner-buttons button[name='copy']").on("click", function () {
@@ -239,7 +251,7 @@ $(document).ready(function () {
             overwriteCheckbox.prop("checked", false);
             const invalidNames = names.filter(name => name.endsWith("+"));
             const existingNames = names.filter(name => wordpacks.get(name));
-            
+
             if (invalidNames.length > 0) {
                 bootbox.alert(`Wordpack names cannot end with a plus sign: "${invalidNames.join('", "')}"`);
                 $(this).val(''); // Clear the file input
@@ -293,6 +305,19 @@ $(document).ready(function () {
         // When an invalid form element is changed, remove the invalid styles (though it might still be invalid when Generate is clicked again)
         $("#generator-form").on("change", ".is-invalid", function () {
             $(this).find(".is-invalid").addBack(".is-invalid").removeClass("is-invalid");
+        });
+
+        // Share all wordpacks button
+        $("#share-wordpack-all").on("click", function () {
+            const shareData = Object.keys(wordpacks.getAll(false))
+                .filter(name => !wordpacks.isDefault(name) || wordpacks.isDefaultModified(name))
+                .map(name => ({
+                    name: name,
+                    content: wordpacks.getRaw(name),
+                    group: "Wordpacks"
+                }));
+            const link = `${window.location.origin}/?share=${compressUrlSafe(JSON.stringify(shareData))}`;
+            navigator.clipboard.writeText(link).then(() => animateSuccess(this))
         });
 
         // Delete wordpack button
