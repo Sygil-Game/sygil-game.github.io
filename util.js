@@ -80,21 +80,24 @@ jQuery.fn.extend({
     }
 });
 
-function createLeftTabComponent(data) {
-    const id = `left-tab-component-${crypto.randomUUID()}`;
+function createDocumentBrowser(data, existing = []) {
+    if (new Set(data.map(tab => tab.name)).size !== data.length) {
+        throw new Error("Tab names must be unique.");
+    }
+
+    const id = `document-browser-${existing.length ? existing.prop("id") : crypto.randomUUID()}`;
     const $component = $(
-        `<div class="d-flex h-100" id="${id}">
-    <div class="nav flex-column nav-tabs left-tabs nav-sm-column me-3" role="tablist"></div>
-    <div class="tab-content flex-grow-1"></div>
+        `<div class="d-flex h-100 document-browser" id="${id}">
+    <div class="nav flex-column nav-tabs flex-nowrap overflow-scroll" role="tablist"></div>
+    <div class="tab-content flex-grow-1 p-0"></div>
 </div>`);
 
     let groups = [...new Set(data.map(tab => tab.group ?? ""))];
     if (groups.includes("")) groups = [""].concat(groups.filter(group => group !== "")); // If there's an empty group, move it to the front
     const groupFragments = {};
     data.forEach((tab, index) => {
-        const tabClass = `tab-${index}-content`;
-        const $button = $(`<button class="nav-link rounded-0" data-bs-toggle="tab" type="button" role="tab" data-bs-target="#${id} .${tabClass}">${tab.name}</button>`);
-        const $content = $(`<div class="tab-pane fade h-100 ${tabClass}" role="tabpanel"><textarea class="form-control w-100 h-100" name="wordpack-content" required>${tab.content}</textarea></div>`);
+        const $button = $(`<button class="nav-link" data-bs-toggle="tab" type="button" role="tab" data-bs-target="#${id} .tab-pane[data-tab-name='${tab.name}']" data-tab-name="${tab.name}">${tab.name}</button>`);
+        const $content = $(`<div class="tab-pane h-100" role="tabpanel" data-tab-name="${tab.name}"><textarea class="form-control w-100 h-100 rounded-0" name="wordpack-content" required>${tab.content}</textarea></div>`);
 
         const group = tab.group ?? "";
         if (!groupFragments[group]) {
@@ -103,7 +106,7 @@ function createLeftTabComponent(data) {
                 contents: $(document.createDocumentFragment())
             };
             if (groups.length > 1 && group) {
-                const $groupHeader = $(`<span class="user-select-none tab-group-header my-2" data-tab-group-name="${group}">${group}</span>`);
+                const $groupHeader = $(`<span class="user-select-none tab-group-header mt-3 mb-1" data-tab-group-name="${group}">${group}</span>`);
                 groupFragments[group].buttons.append($groupHeader);
             }
         }
@@ -118,8 +121,7 @@ function createLeftTabComponent(data) {
 
     $component.find('.nav-link').first().addClass('active');
     $component.find('.tab-pane').first().addClass('active show');
+
+    if (existing.length) existing.replaceWith($component);
     return $component;
 }
-
-
-

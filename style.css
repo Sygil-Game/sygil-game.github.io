@@ -66,3 +66,61 @@ html[data-bs-theme="dark"] blockquote {
 .btn {
     --bs-btn-disabled-opacity: 0.3;
 }
+
+#wordpacks>.input-group {
+    margin-bottom: -1px;
+}
+
+/* Document browser styles */
+.document-browser .nav-link {
+    border-color: var(--bs-secondary-border-subtle);
+    border-width: var(--bs-nav-tabs-border-width);
+    background-color: var(--bs-secondary-bg);
+    text-align: left;
+}
+
+.document-browser .nav-link.active {
+    z-index: 2;
+    /* Needed so bottom-border works properly since margin-bottom is -1 */
+}
+
+.document-browser .nav-link:hover {
+    z-index: 1;
+}
+
+.document-browser .nav-link:nth-child(even):not(.active) {
+    background-color: var(--bs-tertiary-bg);
+}
+
+.document-browser .nav-link:hover {
+    border-color: var(--bs-secondary);
+}
+
+.document-browser .nav-link.active+.nav-link:not(:hover),
+.document-browser .nav-link:hover+.nav-link:not(.active) {
+    border-top-color: transparent;
+}
+
+.document-browser .nav-link:has(+ .nav-link.active):not(:hover),
+.document-browser .nav-link:has(+ .nav-link:hover):not(.active) {
+    border-bottom-color: transparent;
+}
+
+.document-browser textarea {
+    resize: none;
+    margin-left: -1px;
+}
+
+.document-browser .nav-tabs {
+    min-width: 15ch;
+    --bs-nav-tabs-border-radius: 0;
+    --bs-nav-tabs-link-active-border-color: var(--bs-secondary);
+    direction: rtl;
+    border-bottom-width: 0;
+    padding-bottom: var(--bs-nav-tabs-border-width);
+    /* Prevents scrollbar from appearing when unneeded */
+}
+
+.document-browser .nav-tabs * {
+    direction: ltr;
+}

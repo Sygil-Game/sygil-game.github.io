@@ -82,7 +82,7 @@ $(document).ready(function () {
     const urlParams = new URLSearchParams(window.location.search);
     if (urlParams.has('share')) {
         const shareData = JSON.parse(decompressUrlSafe(urlParams.get('share')));
-        createLeftTabComponent(shareData).appendTo($('#importWordpackModal .modal-body'));
+        createDocumentBrowser(shareData).css('max-height', '60vh').appendTo($('#importWordpackModal .modal-body'));
         $('#importWordpackModal').modal('show');
     }
 
@@ -132,16 +132,23 @@ $(document).ready(function () {
                 $(this).val(val);
                 $(this).selectpicker('refresh');
             });
+            $("#wordpacks .document-browser").replaceWith(createDocumentBrowser(Object.keys(wordpacks.getAll(false)).map(name => ({ name, content: wordpacks.getRaw(name) }))));
         }
         updateWordpackSelects();
+        createDocumentBrowser(Object.keys(wordpacks.getAll(false)).map(name => ({ name, content: wordpacks.getRaw(name) }))).appendTo($("#wordpacks"));
+        $("#wordpack-view-select").val($("#wordpack-view-select option").first().val()).selectpicker("refresh");
 
-        function updateWordpackContent() {
-            $("#wordpack-content").val(wordpacks.getRaw($("#wordpack-view-select").val()));
+        function updateWordpackContent(showTab = true) {
+            if (showTab) $("#wordpacks .document-browser .nav-link[data-tab-name='" + $("#wordpack-view-select").val() + "']").tab("show");
             $("#delete-wordpack").prop("disabled", !wordpacks.get($("#wordpack-view-select").val()));
             updateWordpackCornerButtons();
         }
         updateWordpackContent();
         $("#wordpack-view-select").on("change", updateWordpackContent);
+        $("#wordpacks").on("shown.bs.tab", ".nav-link", function () {
+            $("#wordpack-view-select").val($(this).data("tab-name")).selectpicker("refresh");
+            updateWordpackContent(false);
+        });
 
         // Corner buttons
         function updateWordpackCornerButtons() {
@@ -165,18 +172,18 @@ $(document).ready(function () {
         $("#wordpack-corner-buttons button[name='link']").on("click", function () {
             const shareData = [{
                 name: $("#wordpack-view-select").val(),
-                content: $("#wordpack-content").val(),
+                content: $("#wordpacks .document-browser .tab-pane.show textarea").val(),
                 group: "Wordpacks"
             }];
             const link = `${window.location.origin}/?share=${compressUrlSafe(JSON.stringify(shareData))}`;
             navigator.clipboard.writeText(link).then(() => animateSuccess(this))
         });
         $("#wordpack-corner-buttons button[name='copy']").on("click", function () {
-            navigator.clipboard.writeText($("#wordpack-content").val()).then(() => animateSuccess(this))
+            navigator.clipboard.writeText($("#wordpacks .document-browser .tab-pane.show textarea").text()).then(() => animateSuccess(this))
         });
         $("#wordpack-corner-buttons button[name='download']").on("click", function () {
             const a = document.createElement("a");
-            a.href = URL.createObjectURL(new Blob([$("#wordpack-content").val()], { type: "text/plain" }));
+            a.href = URL.createObjectURL(new Blob([$("#wordpacks .document-browser .tab-pane.show textarea").val()], { type: "text/plain" }));
             a.download = `${$("#wordpack-view-select").val()}.txt`;
             a.click();
             animateSuccess(this);
@@ -185,8 +192,8 @@ $(document).ready(function () {
         // Save modifications to the wordpack content
         let typingTimer;
         const doneTypingInterval = 300;
-        $("#wordpack-content").on("input", function () {
-            wordpacks.set($("#wordpack-view-select").val(), $("#wordpack-content").val());
+        $("#wordpacks .document-browser").on(".tab-pane.show textarea input", function () {
+            wordpacks.set($("#wordpack-view-select").val(), $("#wordpacks .document-browser .tab-pane.show textarea").val());
             updateWordpackCornerButtons();
 
             // Only show the save icon after the user has stopped typing
