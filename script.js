@@ -52,8 +52,8 @@ $(document).ready(function () {
         });
     })).observe(document, { childList: true, subtree: true });
 
-    // Autofocus on the first input in a modal
-    $('.modal').on('shown.bs.modal', function () { $(this).find('input').trigger('focus'); });
+    // Autofocus on the first input in a modal or popover
+    $(document).on('shown.bs.modal', '.modal, .popover', function () { $(this).find('input:text:visible:first').focus(); });
 
     // Initialize tooltips
     whenAdded('[data-bs-toggle="tooltip"]', function () { new bootstrap.Tooltip(this) });
