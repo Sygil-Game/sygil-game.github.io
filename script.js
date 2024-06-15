@@ -8,29 +8,23 @@ $(document).ready(function () { setTimeout(() => { document.documentElement.clas
 
 // Dark mode
 // Some of the logic  must be run before the document is ready to avoid flicker
-const darkMode = syncToLocalStorage('darkModeStatus', { 'status': true });
+const darkMode = syncToLocalStorage('darkModeStatus', { 'value': true });
 const renderDarkMode = (bool) => document.documentElement.setAttribute('data-bs-theme', bool ? 'dark' : 'light');
-renderDarkMode(darkMode.status);
+renderDarkMode(darkMode.value);
 $(document).ready(function () {
-    $('#darkModeToggle').prop('checked', darkMode.status).on('change', function () {
-        renderDarkMode(darkMode.status = this.checked);
+    $('#darkModeToggle').prop('checked', darkMode.value).on('change', function () {
+        renderDarkMode(darkMode.value = this.checked);
     });
 });
 
 
 $(document).ready(function () {
-    // Save active tab in sessionStorage
-    const storedTab = sessionStorage.getItem('currentTab');
-    if (storedTab) {
-        $(`.nav-tabs a[href="${storedTab}"]`).tab('show');
-    }
-    $(document).on('click', 'a.nav-link', function () {
-        let newTab = $(this).attr('href');
-        sessionStorage.setItem('currentTab', newTab);
-    });
+    // Save current tab in sessionStorage
+    const storedTab = syncToSessionStorage('currentTab', { 'value': null });
+    if (storedTab.value) $(`.nav-tabs a[href="${storedTab.value}"]`).tab('show');
+    $("#tabs [data-bs-toggle='tab']").on('shown.bs.tab', function () { storedTab.value = $(this).attr('href'); });
 
-
-    // Select picker defaults
+    // Set selectpicker defaults
     $.fn.selectpicker.Constructor.DEFAULTS.liveSearch = true;
     $.fn.selectpicker.Constructor.DEFAULTS.styleBase = 'form-control';
 

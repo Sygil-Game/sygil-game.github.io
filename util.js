@@ -1,15 +1,24 @@
 const PREFIX = "sygil_"; // For localStorage keys
 
+
+const syncTo = (storage, key, defaultValue = {}) => {
+    key = `${PREFIX}${key}`;
+    const initialValue = storage.getItem(key) !== null ? JSON.parse(storage.getItem(key)) : defaultValue;
+    return ObservableSlim.create(initialValue, true, changes => storage.setItem(key, JSON.stringify(initialValue)));
+};
 /**
  * Keep an object in sync with localStorage, stringifying it and updating it whenever it's changed.
  * @param {string} key The key to use for the object in localStorage
  * @param {object} obj The object to sync to localStorage
  */
-const syncToLocalStorage = (key, defaultValue = {}) => {
-    key = `${PREFIX}${key}`;
-    const initialValue = localStorage.getItem(key) !== null ? JSON.parse(localStorage.getItem(key)) : defaultValue;
-    return ObservableSlim.create(initialValue, true, changes => localStorage.setItem(key, JSON.stringify(initialValue)));
-};
+const syncToLocalStorage = (key, defaultValue = {}) => syncTo(localStorage, key, defaultValue);
+/**
+ * Keep an object in sync with localStorage, stringifying it and updating it whenever it's changed.
+ * @param {string} key The key to use for the object in localStorage
+ * @param {object} obj The object to sync to localStorage
+ */
+const syncToSessionStorage = (key, defaultValue = {}) => syncTo(sessionStorage, key, defaultValue);
+
 
 // Clone of jQuery's serializeArray that groups by fieldset and includes blank fields (particularly empty multiselects).
 // Call it on the form element (or anything that contains the fieldsets).
