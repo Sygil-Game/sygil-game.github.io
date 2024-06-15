@@ -1,26 +1,24 @@
 import { compressUrlSafe, decompressUrlSafe } from './lib/lzma-url.mjs'
 
 
-// Dark mode logic that must be run before the document is ready to avoid flicker
-const darkModeKey = `${PREFIX}darkModeStatus`;
-const darkModeStatus = (localStorage.getItem(darkModeKey) ?? 'true') === 'true';
-const setDarkModeStatus = (bool) => document.documentElement.setAttribute('data-bs-theme', bool ? 'dark' : 'light');
-setDarkModeStatus(darkModeStatus);
-
 // Disable initial animations for state restore
 document.documentElement.classList.add('no-transition');
 $(document).ready(function () { setTimeout(() => { document.documentElement.classList.remove('no-transition'); }, 10); });
 
 
+// Dark mode
+// Some of the logic  must be run before the document is ready to avoid flicker
+const darkMode = syncToLocalStorage('darkModeStatus', { 'status': true });
+const renderDarkMode = (bool) => document.documentElement.setAttribute('data-bs-theme', bool ? 'dark' : 'light');
+renderDarkMode(darkMode.status);
 $(document).ready(function () {
-    // Dark mode
-    document.getElementById('darkModeToggle').checked = darkModeStatus;
-    $('#darkModeToggle').on('change', function () {
-        const darkModeStatus = this.checked;
-        localStorage.setItem(darkModeKey, darkModeStatus);
-        setDarkModeStatus(darkModeStatus);
+    $('#darkModeToggle').prop('checked', darkMode.status).on('change', function () {
+        renderDarkMode(darkMode.status = this.checked);
     });
+});
 
+
+$(document).ready(function () {
     // Save active tab in sessionStorage
     const storedTab = sessionStorage.getItem('currentTab');
     if (storedTab) {
