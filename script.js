@@ -30,34 +30,20 @@ $(document).ready(function () {
 
     // Replace all instances of 'Sygil(s)' with stylized spans
     function replaceSygil(rootNode) {
-        const regex = /Sygils?/g;
-
-        const nodeIterator = document.createNodeIterator(rootNode, NodeFilter.SHOW_TEXT, {
-            acceptNode(node) {
-                if (!node.nodeValue.match(regex)) return NodeFilter.FILTER_REJECT;
-                if (node.parentNode.classList.contains('sygil')) return NodeFilter.FILTER_REJECT;
-                return NodeFilter.FILTER_ACCEPT;
-            }
-        });
-        const nodes = [];
-        let currentNode;
-        while ((currentNode = nodeIterator.nextNode())) nodes.push(currentNode); // Collect into a list first since we'll be modifying the DOM and that confuses the iterator
-        for (const node of nodes) {
-            const delimiters = Array.from(node.nodeValue.matchAll(regex), match => match[0]);
-            const parts = node.nodeValue.split(regex);
-            const fragment = document.createDocumentFragment(); // Document fragment to hold the new nodes
-            parts.forEach((part) => {
-                if (part) fragment.appendChild(document.createTextNode(part)); // Don't add empty text nodes
-                const delimiter = delimiters.shift();
-                if (delimiter) { // Re-add the "Sygil(s)" delimiters we split on
-                    const span = document.createElement('span');
-                    span.className = 'sygil';
-                    span.textContent = delimiter;
-                    fragment.appendChild(span);
-                }
+        const regex = /(Sygils?)/g;
+        const selector = ":not(.sygil):not(input):not(textarea)" // We don't want to edit the contents of input elements
+        $(rootNode).find(selector + ":not(iframe)").addBack(selector).contents() // Allegedly iframes cause a jQuery bug with contents()
+            .filter(function () { return this.nodeType === Node.TEXT_NODE && regex.test(this.nodeValue); })
+            .each(function () {
+                const fragment = document.createDocumentFragment(); // Document fragment to hold the new nodes
+                this.nodeValue.split(regex).forEach((part, i) => {
+                    // Even entries are the text around the "Sygil(s)"
+                    if (i % 2 == 0 && part) fragment.appendChild(document.createTextNode(part)); // Don't add empty text nodes
+                    // Odd entries are the "Sygil(s)"
+                    if (i % 2 == 1) fragment.appendChild($('<span>', { class: 'sygil', text: part })[0]);
+                });
+                this.parentNode.replaceChild(fragment, this);
             });
-            node.parentNode.replaceChild(fragment, node);
-        }
     }
     replaceSygil(document.body);
     (new MutationObserver((mutations) => {
