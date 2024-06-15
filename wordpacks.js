@@ -5,6 +5,7 @@ class WordpackManager {
         WordpackManager.instance = this;
 
         this.wordpacks = syncToLocalStorage('wordpacks', {});
+        this.listeners = [];
     }
 
     _get(name) {
@@ -31,6 +32,7 @@ class WordpackManager {
 
     set(name, rawText) {
         this.wordpacks[name] = Object.assign(this.wordpacks[name] || {}, this.parse(rawText));
+        this.listeners.forEach(listener => listener(this));
     }
 
     setDefault(name, rawText) {
@@ -40,6 +42,7 @@ class WordpackManager {
 
     remove(name) {
         delete this.wordpacks[name];
+        this.listeners.forEach(listener => listener(this));
     }
 
     analyzeName(name) {
@@ -85,6 +88,10 @@ class WordpackManager {
     isDefaultModified(name) {
         const [wordpack, type] = this._get(name);
         return !!(wordpack?.defaultRaw && (wordpack?.defaultRaw !== wordpack?.raw));
+    }
+
+    onChange(listener) {
+        this.listeners.push(listener);
     }
 }
 
