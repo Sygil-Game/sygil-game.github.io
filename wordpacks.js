@@ -30,9 +30,9 @@ class WordpackManager {
         return wordpack?.defaultRaw;
     }
 
-    set(name, rawText) {
+    set(name, rawText, reason = null) {
         this.wordpacks[name] = Object.assign(this.wordpacks[name] || {}, this.parse(rawText));
-        this.listeners.forEach(listener => listener(this));
+        this.listeners.forEach(listener => listener(this, reason));
     }
 
     setDefault(name, rawText) {

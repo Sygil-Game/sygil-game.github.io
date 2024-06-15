@@ -124,7 +124,7 @@ $(document).ready(function () {
             rebuildWordpackDocumentBrowser();
         }
         updateWordpackSelects();
-        wordpacks.onChange(updateWordpackSelects);
+        wordpacks.onChange((_, reason) => { if (reason != "textarea_edit") updateWordpackSelects(); });
         $("#wordpack-view-select").val($("#wordpack-view-select option").first().val()).selectpicker("refresh"); // Select the first wordpack by default
 
         // When a user changes the wordpack view select, switch to the appropriate tab
@@ -202,7 +202,7 @@ $(document).ready(function () {
         let typingTimer;
         const doneTypingInterval = 300;
         $("#wordpacks").on("input", ".document-browser .tab-pane.active textarea", function () {
-            wordpacks.set($("#wordpack-view-select").val(), $("#wordpacks .document-browser .tab-pane.show textarea").val());
+            wordpacks.set($("#wordpack-view-select").val(), $("#wordpacks .document-browser .tab-pane.show textarea").val(), "textarea_edit");
             updateWordpackCornerButtons();
 
             // Only show the save icon after the user has stopped typing
