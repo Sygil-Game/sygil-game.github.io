@@ -84,9 +84,8 @@ $(document).ready(async function () {
         updateWordpackSelects();
     });
 
-    // Add clear buttons to select pickers
-    whenAdded('select.select-picker-clear', function () {
-        if (!$(this).parent().hasClass('bootstrap-select')) return; // Wait for the select picker to be initialized
+    // Add clear buttons to select pickers (only once initialized)
+    whenAdded('.bootstrap-select select.select-picker-clear', function () {
         const clearButton = $('#select-picker-clear-template').prop('content').cloneNode(true);
         $(clearButton).find('button').on('click', () => $(this).val("").selectpicker('refresh'));
         $(this).parent().append(clearButton);
