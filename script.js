@@ -87,7 +87,7 @@ $(document).ready(async function () {
     // Add clear buttons to select pickers (only once initialized)
     whenAdded('.bootstrap-select select.select-picker-clear', function () {
         const clearButton = $('#select-picker-clear-template').prop('content').cloneNode(true);
-        $(clearButton).find('button').on('click', () => $(this).val("").selectpicker('refresh'));
+        $(clearButton).find('button').on('click', () => $(this).val("").selectpicker('refresh').trigger("change"));
         $(this).parent().append(clearButton);
     });
 
