@@ -136,86 +136,24 @@ function createDocumentBrowser(data, existing = []) {
 }
 
 
-const testCases = [
-    [ // 1. Two empty objects
-        {},
-        {},
-        true
-    ],
-    [ // 2. Simple objects with same key
-        { a: 1 },
-        { a: 2 },
-        true],
-    [ // 3. Simple objects with different keys
-        { a: 1 },
-        { b: 2 },
-        false],
-    [ // 4. Nested objects with same structure
-        { a: { b: 2 } },
-        { a: { b: 3 } },
-        true],
-    [ // 5. Nested objects with different structure
-        { a: { b: 2 } },
-        { a: { c: 3 } },
-        false],
-    [ // 6. Simple arrays
-        [1, 2],
-        [3, 4],
-        true],
-    [ // 7. Arrays with objects
-        [{ a: 1 }],
-        [{ a: 2 }],
-        true],
-    [ // 8. Arrays with objects with different keys
-        [{ a: 1 }],
-        [{ b: 2 }],
-        false],
-    [ // 9. Objects with arrays
-        { a: [1, 2] },
-        { a: [3, 4] },
-        true],
-    [ // 10. Different order
-        { a: [1, { b: 2 }] },
-        { a: [{ b: 4 }, 3] },
-        false],
-    [ // 11. Different number of keys
-        { a: { b: [1, { c: 3 }, 4] } },
-        { a: { b: [2, { c: 4, d: 6 }, 5] } },
-        false],
-    [ // 12. Different array lengths
-        { a: [{ b: { c: 1 } }, 2] },
-        { a: [{ b: { c: 2 } }, 3, 4] },
-        false],
-    [ // 13. Empty arrays
-        { a: { b: [1, { c: { d: [] } }, 4] } },
-        { a: { b: [2, { c: { d: [] } }, 5] } },
-        true],
-    [ // 14. Empty objects
-        { a: [1, { b: [2, { c: 3, d: {} }] }, 4] },
-        { a: [5, { b: [6, { c: 7, d: {} }] }, 8] },
-        true],
-    [ // 15. Complex nested arrays and objects with multiple levels
-        { a: [{ b: { c: [1, 2] } }, { d: { e: [3, 4] } }] },
-        { a: [{ b: { c: [5, 6] } }, { d: { e: [7, 8] } }] },
-        true
-    ]
-];
-
+/**
+ * Clone an object, replacing all leaf nodes with the blank string.
+ * @param {object} obj The object to clone
+ * @returns {object} The cloned object
+ */
 function cloneStructure(obj) {
-    const clone = JSON.parse(JSON.stringify(obj)); // Destroy any weird objects (e.g. Sets)
-    return JSON.parse(JSON.stringify(clone, (key, value) => { // Set all leaf nodes to the blank string
+    const cleanObj = JSON.parse(JSON.stringify(obj)); // Destroy any weird objects (e.g. Sets)
+    return JSON.parse(JSON.stringify(cleanObj, (key, value) => { // Set all leaf nodes to the blank string
         if (typeof value !== 'object' && !Array.isArray(value)) return "";
         return value;
     }));
 }
+/**
+ * Check if two objects have the same structure, ignoring leaf node values.
+ * @param {object} obj1 The first object
+ * @param {object} obj2 The second object
+ * @returns {boolean} Whether the objects have the same structure
+ */
 function areStructuresEqual(obj1, obj2) {
     return _.isEqual(cloneStructure(obj1), cloneStructure(obj2));
-}
-
-for (let i = 0; i < testCases.length; i++) {
-    if (areStructuresEqual(testCases[i][0], testCases[i][1]) !== testCases[i][2]) {
-        console.log(`Test case ${i + 1} FAILED`);
-    } else {
-        console.log(`${i + 1} passed`);
-    }
 }
