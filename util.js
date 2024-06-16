@@ -96,7 +96,7 @@ function createDocumentBrowser(data, existing = []) {
 
     const id = `document-browser-${existing.length ? existing.prop("id") : crypto.randomUUID()}`;
     const $component = $(
-        `<div class="d-flex h-100 document-browser" id="${id}">
+        `<div class="d-flex document-browser" id="${id}">
     <div class="nav flex-column nav-tabs flex-nowrap overflow-scroll" role="tablist"></div>
     <div class="tab-content flex-grow-1 p-0"></div>
 </div>`);

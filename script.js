@@ -133,14 +133,12 @@ $(document).ready(async function () {
             component.appendTo($("#wordpacks"));
         }
         $("#wordpacks .nav-link.active").trigger("shown.bs.tab"); // Trigger the shown-tab event for the first tab shown so it updates the select and corner buttons
+        $('#wordpacks .document-browser').css('height', `calc(100vh - ${$('#wordpacks .document-browser').offset().top}px - 40px)`);
         return component;
     }
     rebuildWordpackDocumentBrowser();
 
-    // Automatically resize the wordpack document browser to fit in the window
-    $(window).on('resize', () =>
-        $('#wordpacks .document-browser').css('max-height', `calc(100vh - ${$('#wordpacks .document-browser').offset().top}px - 40px)`)
-    );
+    // Size the wordpack document browser to fit in the window
 
     // Corner buttons
     function updateWordpackCornerButtons() {
