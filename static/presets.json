@@ -1,5 +1,6 @@
-{
-    "Default": {
+[
+    {
+        "name": "Default",
         "schema_version": 1,
         "sets": [
             {
@@ -22,4 +23,4 @@
             }
         ]
     }
-}
+]

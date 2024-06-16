@@ -56,7 +56,19 @@
             </div>
             <!-- Generator -->
             <div class="tab-pane" id="generator">
-                <div class="container mt-5 px-0 border rounded position-relative">
+                <div class="d-flex justify-content-end mb-3">
+                    <div class="input-group w-auto">
+                        <label class="input-group-text" for="generator-preset-select">Preset:</label>
+                        <select class="preset-select" id="generator-preset-select" data-style="rounded-0">
+                            <option value="default">Default</option>
+                        </select>
+                        <button class="btn btn-outline-secondary" id="importPreset" type="button"><i
+                                class="bi bi-upload"></i></button>
+                        <button class="btn btn-outline-danger" id="deletePreset" type="button"><i
+                                class="bi bi-trash"></i></button>
+                    </div>
+                </div>
+                <div class="container px-0 border rounded position-relative">
                     <form id="generator-form" novalidate>
                         <!-- Template for one set -->
                         <template id="set-template">
@@ -146,7 +158,7 @@
                 <div class="input-group">
                     <label class="input-group-text rounded-bottom-0" style="min-width: 15ch;"
                         for="wordpack-view-select">Wordpack:</label>
-                    <select class="flex-grow-1 wordpack-select" id="wordpack-view-select" data-style="rounded-0"></select>
+                    <select class="flex-grow-1 wordpack-select wordpack-select-no-extended" id="wordpack-view-select" data-style="rounded-0"></select>
                     <button class="btn btn-outline-secondary" id="new-wordpack" data-toggle="popover-x"
                         data-target="#new-wordpack-popover" data-placement="auto-bottom" data-bs-toggle="tooltip"
                         data-bs-trigger="hover" data-bs-placement="top" data-bs-title="Create new wordpack"><i

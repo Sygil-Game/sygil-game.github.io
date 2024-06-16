@@ -157,3 +157,17 @@ function cloneStructure(obj) {
 function areStructuresEqual(obj1, obj2) {
     return _.isEqual(cloneStructure(obj1), cloneStructure(obj2));
 }
+
+/**
+ * Clone one object to another, overwriting it.
+ * Used for when you need to preserve the target object instead of creating a new one. (i.e. for proxies)
+ * Ignores properties that start with "__".
+ * @param {object} target The target object
+ * @param {object} source The source object
+ * @returns {object} The target object
+ */
+function overwrite(target, source) {
+    Object.getOwnPropertyNames(target).filter(p => !p.startsWith("__")).forEach(p => delete target[p]);
+    Object.assign(target, JSON.parse(JSON.stringify(source)));
+    return target;
+}
