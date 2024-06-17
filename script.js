@@ -78,7 +78,7 @@ $(document).ready(async function () {
             noneSelectedText: "Select a wordpack",
             noneResultsText: 'No wordpacks found matching "{0}"',
         });
-        updateWordpackSelects();
+        populateWordpackSelects(this);
     });
 
     // Add clear buttons to select pickers (only once initialized)
@@ -89,20 +89,21 @@ $(document).ready(async function () {
     });
 
     // To be run whenever the available wordpacks change.
-    // Updates all wordpack selects and rebuilds the wordpack document browser.
-    function updateWordpackSelects() {
+    // Adds options to all wordpack selects and rebuilds the wordpack document browser.
+    // If root is provided, only updates the selects within that root element and doesn't rebuild the wordpack document browser.
+    function populateWordpackSelects(root = null) {
         const newHTML = Object.keys(wordpacks.getAll()).map(name => `<option>${name}</option>`);
         const newHTMLNoExtended = Object.keys(wordpacks.getAll(false)).map(name => `<option>${name}</option>`);
-        $("select.wordpack-select").each(function () {
+        $(root ?? document).find("select.wordpack-select").addBack("select.preset-select").each(function () {
             const val = $(this).val(); // Save val and restore it (since we're temporarily nuking all the options)
             if ($(this).hasClass('wordpack-select-no-extended')) $(this).empty().append(newHTMLNoExtended);
             else $(this).empty().append(newHTML);
             $(this).val(val).selectpicker('refresh');
         });
-        rebuildWordpackDocumentBrowser();
+        if (!root) rebuildWordpackDocumentBrowser();
     }
-    updateWordpackSelects();
-    wordpacks.onChange((_, reason) => { if (reason != "textarea_edit") updateWordpackSelects(); }); // Don't rebuild things if wordpacks only changed because the user typed something in the textarea
+    populateWordpackSelects();
+    wordpacks.onChange((_, reason) => { if (reason != "textarea_edit") populateWordpackSelects(); }); // Don't rebuild things if wordpacks only changed because the user typed something in the textarea
 
     // Select the first wordpack by default in the wordpack view select
     $("#wordpack-view-select").val($("#wordpack-view-select option").first().val()).selectpicker("refresh");
@@ -134,8 +135,6 @@ $(document).ready(async function () {
         return component;
     }
     rebuildWordpackDocumentBrowser();
-
-    // Size the wordpack document browser to fit in the window
 
     // Corner buttons
     function updateWordpackCornerButtons() {
@@ -314,7 +313,10 @@ $(document).ready(async function () {
     });
 
     /* Presets */
-    const presets = await fetch('static/presets.json').then(response => response.json()).then(presets => Object.fromEntries(presets.map(preset => [preset.name, preset])));
+    // Get default presets
+    await fetch('static/presets.json')
+        .then(response => response.json())
+        .then(defaultPresets => defaultPresets.forEach(preset => presets.setDefault(preset)));
 
     // Initialize preset selects whenever they're added
     whenAdded('select.preset-select:not(.preset-select-initialized)', function () {
@@ -324,25 +326,29 @@ $(document).ready(async function () {
             noneResultsText: 'No presets found matching "{0}"',
         });
     });
+
     // Add presets to preset select dropdown
-    function updatePresetSelects() {
-        const newHTML = Object.keys(presets).map(name => `<option>${name}</option>`);
+    function populatePresetSelects() {
+        const newHTML = Object.keys(presets.getAll()).map(name => `<option>${name}</option>`);
         $("select.preset-select").each(function () {
             const val = $(this).val(); // Save val and restore it (since we're temporarily nuking all the options)
             $(this).empty().append(newHTML);
             $(this).val(val).selectpicker('refresh');
         });
     }
-    updatePresetSelects();
+    populatePresetSelects();
+    presets.onChange(populatePresetSelects);
+
+    // Load presets into the generator when selected
     $("#generator-preset-select").on("changed.bs.select", function () {
         if ($(this).val() && generator_input.name !== $(this).val()) { // Don't double-dip (since loading a preset also changes the select picker)
-            overwrite(generator_input, presets[$(this).val()]);
+            overwrite(generator_input, presets.get($(this).val()));
             renderGenerator();
         }
     });
 
     /* Generator */
-    const generator_input = syncToLocalStorage("generator_input", JSON.parse(JSON.stringify(presets["Default"])));
+    const generator_input = syncToLocalStorage("generator_input", presets.get("Default"));
     const generator_output = syncToLocalStorage("generator_output", {
         output: [],
         options: {
@@ -391,34 +397,29 @@ $(document).ready(async function () {
 
     // Turn generator_input into the generator form HTML
     async function renderGenerator() {
-        $('#set-container').empty();
+        const fragment = document.createDocumentFragment();
         for (let i = 0; i < generator_input.sets.length; i++) {
             const set = generator_input.sets[i];
             const setClone = $('#set-template').prop('content').cloneNode(true);
-            const setElem = $(setClone).find('.set'); // Save a reference to the element, since adding the document fragment to the page makes interacting with it weird
-            $('#set-container').append(setClone);
+            const setElem = $(setClone).find('.set');
             // Header
             setElem.toggleClass('border', generator_input.sets.length > 1);
             setElem.find('.set-header').toggleClass('d-none', !(generator_input.sets.length > 1));
             setElem.find('[name="set_name"]').attr("placeholder", `Player ${i + 1}`).val(set.name);
-            // Add all group clones first so we can update their wordpack selects
-            const groupElems = set.groups.map(() => {
+            // Groups
+            for (const group of set.groups) {
                 const groupClone = $('#group-template').prop('content').cloneNode(true);
                 const groupElem = $(groupClone).find('.group');
-                setElem.find('.group-container').append(groupClone);
-                return groupElem;
-            });
-            await new Promise(resolve => setTimeout(resolve, 100)); // Wait for the wordpack selects to be initialized
-            // Now populate values
-            for (let j = 0; j < set.groups.length; j++) {
-                const group = set.groups[j];
-                const groupElem = groupElems[j];
+                populateWordpackSelects(groupElem);
                 groupElem.find('[name="num_words"]').val(group.num_words);
                 groupElem.find('[name="wordpacks"]').val(group.wordpacks).selectpicker("refresh");
                 if (set.groups.length > 1) groupElem.find('.delete-group').removeClass('invisible');
+                setElem.find('.group-container').append(groupClone);
             }
             setElem.find('[name="players"]').val(set.players);
+            fragment.append(setClone);
         }
+        $('#set-container').empty().append(fragment);
         updateGeneratorInput(); // Read the data back from the form, which handles things like the preset select and included wordpacks
     }
     await renderGenerator();
@@ -464,7 +465,7 @@ $(document).ready(async function () {
     function updateGeneratorInput() {
         const sets = getPresetFromForm();
         overwrite(generator_input, {
-            name: Object.values(presets).find(preset => _.isEqual(preset.sets, sets))?.name,
+            name: Object.values(presets.getAll()).find(preset => _.isEqual(preset.sets, sets))?.name,
             schema_version: CURRENT_SCHEMA_VERSION,
             sets: sets,
             wordpacks: wordpacks.getWordpacksFor(sets)
