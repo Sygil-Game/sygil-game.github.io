@@ -143,7 +143,7 @@ $(document).ready(async function () {
         if (selectedWordpack) {
             $("#wordpack-corner-buttons button[name='reset']").toggleClass("d-none", !wordpacks.isDefault(selectedWordpack));
             $("#wordpack-corner-buttons button[name='reset']").prop("disabled", !wordpacks.isDefaultModified(selectedWordpack));
-            $("#wordpack-corner-buttons button[name='reset'] + button").toggleClass("rounded-start", !wordpacks.isDefault(selectedWordpack));
+            $("#wordpack-corner-buttons button[name='reset'] + div > button").toggleClass("rounded-start", !wordpacks.isDefault(selectedWordpack));
         }
     }
     function animateSuccess(button) {

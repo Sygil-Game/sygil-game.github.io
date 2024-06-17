@@ -160,7 +160,8 @@
                 <div class="input-group">
                     <label class="input-group-text rounded-bottom-0" style="min-width: 15ch;"
                         for="wordpack-view-select">Wordpack:</label>
-                    <select class="flex-grow-1 wordpack-select wordpack-select-no-extended" id="wordpack-view-select" data-style="rounded-0"></select>
+                    <select class="flex-grow-1 wordpack-select wordpack-select-no-extended" id="wordpack-view-select"
+                        data-style="rounded-0"></select>
                     <button class="btn btn-outline-secondary" id="new-wordpack" data-toggle="popover-x"
                         data-target="#new-wordpack-popover" data-placement="auto-bottom" data-bs-toggle="tooltip"
                         data-bs-trigger="hover" data-bs-placement="top" data-bs-title="Create new wordpack"><i
@@ -226,15 +227,20 @@
                         <button class="btn btn-outline-secondary" type="button" name="reset" data-bs-toggle="tooltip"
                             data-bs-trigger="hover" data-bs-placement="bottom" data-bs-title="Reset to default"><i
                                 class="bi bi-arrow-clockwise"></i></button>
-                        <button class="btn btn-outline-secondary" type="button" name="link" data-bs-toggle="tooltip"
-                            data-bs-trigger="hover" data-bs-placement="bottom" data-bs-title="Copy sharing link"><i
-                                class="bi bi-link-45deg"></i></button>
-                        <button class="btn btn-outline-secondary" type="button" name="copy" data-bs-toggle="tooltip"
-                            data-bs-trigger="hover" data-bs-placement="bottom" data-bs-title="Copy to clipboard"><i
-                                class="bi bi-clipboard"></i></button>
-                        <button class="btn btn-outline-secondary" type="button" name="download" data-bs-toggle="tooltip"
-                            data-bs-trigger="hover" data-bs-placement="bottom" data-bs-title="Download"><i
-                                class="bi bi-download"></i></button>
+                        <div class="dropdown btn-group">
+                            <button class="btn btn-outline-secondary rounded-end" type="button"
+                                data-bs-toggle="dropdown">
+                                <i class="bi bi-box-arrow-up"></i>
+                            </button>
+                            <ul class="dropdown-menu">
+                                <li><button class="dropdown-item" type="button" name="link"><i
+                                            class="bi bi-link-45deg"></i>&nbsp;Copy link</button></li>
+                                <li><button class="dropdown-item" type="button" name="copy"><i
+                                            class="bi bi-clipboard"></i>&nbsp;Copy to clipboard</button></li>
+                                <li><button class="dropdown-item" type="button" name="download"><i
+                                            class="bi bi-download"></i>&nbsp;Download</button></li>
+                            </ul>
+                        </div>
                     </div>
                 </div>
             </div>
