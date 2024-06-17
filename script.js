@@ -376,7 +376,7 @@ $(document).ready(async function () {
     if (urlParams.has("o")) overwrite(generator_output, JSON.parse(decompressUrlSafe(urlParams.get("o"))));
     if (urlParams.has('share')) {
         const shareData = JSON.parse(decompressUrlSafe(urlParams.get('share')));
-        const component = createDocumentBrowser(shareData).css('max-height', '60vh');
+        const component = createDocumentBrowser(shareData).addClass('h-100');
         component.find('textarea').prop('disabled', true);
         let hasDuplicates = false;
         component.find('.nav-link').each(function () {
