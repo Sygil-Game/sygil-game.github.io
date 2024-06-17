@@ -106,7 +106,11 @@ html[data-bs-theme="dark"] blockquote {
     border-bottom-color: transparent;
 }
 
-.document-browser textarea {
+.document-browser .tab-pane {
+    margin-right: -1px;
+}
+
+.document-browser .tab-pane textarea {
     resize: none;
     margin-left: -1px;
 }
