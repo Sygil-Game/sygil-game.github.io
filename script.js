@@ -149,48 +149,73 @@ $(document).ready(async function () {
     $("#wordpack-corner-buttons button[name='reset']").on("click", function () {
         wordpacks.set($("#wordpack-view-select").val(), wordpacks.getDefault($("#wordpack-view-select").val()));
     });
-    $("#wordpack-corner-buttons button[name='link']").on("click", function () {
-        const shareData = [{
-            name: $("#wordpack-view-select").val(),
-            content: $("#wordpacks .document-browser .tab-pane.show textarea").val(),
-            group: "Wordpacks"
-        }];
-        const link = `${window.location.origin}/?share=${compressUrlSafe(JSON.stringify(shareData))}`;
-        navigator.clipboard.writeText(link);
-    });
-    $("#wordpack-corner-buttons button[name='copy']").on("click", function () {
-        navigator.clipboard.writeText($("#wordpacks .document-browser .tab-pane.show textarea").text());
-    });
-    $("#wordpack-corner-buttons button[name='download']").on("click", function () {
-        saveAs(new Blob([$("#wordpacks .document-browser .tab-pane.show textarea").val()], { type: "text/plain" }),
-            `${$("#wordpack-view-select").val()}.txt`);
-    });
-    $("#wordpack-corner-buttons button[name='delete']").on("click", () => {
-        const select = $("#wordpack-view-select");
-        bootbox.confirm(`Are you sure you want to delete the wordpack "${select.val()}"?`, (confirmed) => {
-            if (!confirmed) return;
-            wordpacks.remove(select.val());
+
+    // Sets up functionality for all buttons in an export dropdown (e.g. copy link, download)
+    // Used for both wordpacks and presets
+    function handleItemButtons({ groupName, root, manager, select, getCurrentContent, getAll }) {
+        $(root).find("button[name='link']").on("click", function () {
+            const shareData = [{
+                name: $(select).val(),
+                content: getCurrentContent(),
+                group: groupName
+            }];
+            const link = `${window.location.origin}/?share=${compressUrlSafe(JSON.stringify(shareData))}`;
+            navigator.clipboard.writeText(link);
         });
-    });
-    $("#wordpack-corner-buttons button[name='link-all']").on("click", () => {
-        const shareData = Object.keys(wordpacks.getAll(false))
-            .filter(name => !wordpacks.isDefault(name) || wordpacks.isDefaultModified(name))
-            .map(name => ({
-                name: name,
-                content: wordpacks.getRaw(name),
-                group: "Wordpacks"
-            }));
-        const link = `${window.location.origin}/?share=${compressUrlSafe(JSON.stringify(shareData))}`;
-        navigator.clipboard.writeText(link);
-    });
-    $("#wordpack-corner-buttons button[name='download-all']").on("click", () => {
-        const zip = new JSZip();
-        Object.keys(wordpacks.getAll(false))
-            .filter(name => !wordpacks.isDefault(name) || wordpacks.isDefaultModified(name))
-            .forEach(name => {
-                zip.file(`${name}.txt`, wordpacks.getRaw(name));
+        $(root).find("button[name='copy']").on("click", function () {
+            navigator.clipboard.writeText(getCurrentContent());
+        });
+        $(root).find("button[name='download']").on("click", function () {
+            saveAs(new Blob([getCurrentContent()], { type: "text/plain" }),
+                `${$(select).val()}.txt`);
+        });
+        $(root).find("button[name='delete']").on("click", () => {
+            bootbox.confirm(`Are you sure you want to delete the ${groupName.toLowerCase().replace(/s$/, "")} "${$(select).val()}"?`, (confirmed) => {
+                if (!confirmed) return;
+                manager.remove($(select).val());
             });
-        zip.generateAsync({ type: "blob" }).then(content => saveAs(content, "wordpacks.zip"));
+        });
+        $(root).find("button[name='link-all']").on("click", () => {
+            const shareData = Object.entries(getAll())
+                .map(([name, content]) => ({
+                    name: name,
+                    content: content,
+                    group: groupName
+                }));
+            if (shareData.length == 0) {
+                bootbox.alert(`No ${groupName.toLowerCase()} to share.`);
+                return;
+            }
+            const link = `${window.location.origin}/?share=${compressUrlSafe(JSON.stringify(shareData))}`;
+            navigator.clipboard.writeText(link);
+        });
+        $(root).find("button[name='download-all']").on("click", () => {
+            const zip = new JSZip();
+            Object.entries(getAll()).forEach(([name, content]) => zip.file(`${name}.txt`, content));
+            zip.generateAsync({ type: "blob" }).then(content => saveAs(content, `${groupName}.zip`));
+        });
+    }
+
+    handleItemButtons({
+        groupName: "Wordpacks",
+        root: $("#wordpack-corner-buttons"),
+        manager: wordpacks,
+        select: $("#wordpack-view-select"),
+        getCurrentContent: () => $("#wordpacks .document-browser .tab-pane.show textarea").val(),
+        getAll: () => Object.fromEntries(Object.keys(wordpacks.getAll(false))
+            .filter(name => !wordpacks.isDefault(name) || wordpacks.isDefaultModified(name))
+            .map(name => [name, wordpacks.getRaw(name)]))
+    });
+
+    handleItemButtons({
+        groupName: "Presets",
+        root: $("#generator-preset-bar"),
+        manager: presets,
+        select: $("#generator-preset-select"),
+        getCurrentContent: () => JSON.stringify(presets.get($("#generator-preset-select").val())),
+        getAll: () => Object.fromEntries(Object.entries(presets.getAll())
+            .filter(([name, content]) => !presets.isDefault(name))
+            .map(([name, content]) => [name, JSON.stringify(content)]))
     });
 
     // Save modifications to the wordpack content
@@ -270,14 +295,7 @@ $(document).ready(async function () {
             $("label[for='import-wordpack-overwrite-checkbox'] span").text(`"${existingNames.join('", "')}"`);
         }
     });
-    function readFile(file) {
-        return new Promise(function (resolve, reject) {
-            const reader = new FileReader();
-            reader.onload = () => resolve(reader.result);
-            reader.onerror = () => reject(reader);
-            reader.readAsText(file);
-        });
-    }
+
     $('#import-wordpack-popover form').on('submit', function () {
         // File reading is async but we need to return false immediately to prevent form submission, so we have an inner async wrapper
         (async () => {
@@ -344,10 +362,10 @@ $(document).ready(async function () {
         }
     });
 
-    // Delete preset button
-    function updateDeletePresetButton() { // Disable the delete button for default presets
+    // Handle hiding of delete preset button for default presets
+    function updateDeletePresetButton() {
         const val = $("#generator-preset-select").val();
-        $("#delete-preset").prop("disabled", !val || presets.isDefault(val));
+        $("#generator-preset-bar button[name='delete']").toggle(val && !presets.isDefault(val));
     }
     updateDeletePresetButton();
     presets.onChange(updateDeletePresetButton);

@@ -171,3 +171,17 @@ function overwrite(target, source) {
     Object.assign(target, JSON.parse(JSON.stringify(source)));
     return target;
 }
+
+/**
+ * Read a file as text.
+ * @param {File} file The file to read
+ * @returns {Promise<string>} The file's text
+ */
+function readFile(file) {
+    return new Promise(function (resolve, reject) {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = () => reject(reader);
+        reader.readAsText(file);
+    });
+}
