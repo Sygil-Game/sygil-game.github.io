@@ -72,11 +72,8 @@ $(document).ready(async function () {
     }))).forEach(([name, rawText]) => wordpacks.setDefault(name, rawText)); // In 2 steps to preserve order
 
     // Initialize wordpack selects whenever they're added
-    whenAdded('select.wordpack-select', function () {
-        // Make sure we don't double-dip
-        if ($(this).hasClass('wordpack-select-initialized')) return;
-        $(this).addClass('wordpack-select-initialized');
-        // Initialize select picker
+    whenAdded('select.wordpack-select:not(.wordpack-select-initialized)', function () {
+        $(this).addClass('wordpack-select-initialized'); // Make sure we don't double-dip
         $(this).selectpicker({
             noneSelectedText: "Select a wordpack",
             noneResultsText: 'No wordpacks found matching "{0}"',
@@ -320,11 +317,8 @@ $(document).ready(async function () {
     const presets = await fetch('static/presets.json').then(response => response.json()).then(presets => Object.fromEntries(presets.map(preset => [preset.name, preset])));
 
     // Initialize preset selects whenever they're added
-    whenAdded('select.preset-select', function () {
-        // Make sure we don't double-dip
-        if ($(this).hasClass('preset-select-initialized')) return;
-        $(this).addClass('preset-select-initialized');
-        // Initialize select picker
+    whenAdded('select.preset-select:not(.preset-select-initialized)', function () {
+        $(this).addClass('preset-select-initialized'); // Make sure we don't double-dip
         $(this).selectpicker({
             noneSelectedText: "Select a preset",
             noneResultsText: 'No presets found matching "{0}"',
