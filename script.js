@@ -347,6 +347,22 @@ $(document).ready(async function () {
         }
     });
 
+    // Delete preset button
+    function updateDeletePresetButton() { // Disable the delete button for default presets
+        const val = $("#generator-preset-select").val();
+        $("#delete-preset").prop("disabled", !val || presets.isDefault(val));
+    }
+    updateDeletePresetButton();
+    presets.onChange(updateDeletePresetButton);
+    $("#generator-preset-select").on("changed.bs.select", updateDeletePresetButton);
+    $("#delete-preset").on("click", () => {
+        const select = $("#generator-preset-select");
+        bootbox.confirm(`Are you sure you want to delete the preset "${select.val()}"?`, (confirmed) => {
+            if (!confirmed) return;
+            presets.remove(select.val());
+        });
+    });
+
     /* Generator */
     const generator_input = syncToLocalStorage("generator_input", presets.get("Default"));
     const generator_output = syncToLocalStorage("generator_output", {
@@ -471,6 +487,7 @@ $(document).ready(async function () {
             wordpacks: wordpacks.getWordpacksFor(sets)
         });
         $("#generator-preset-select").val(generator_input.name).selectpicker("refresh");
+        updateDeletePresetButton(); // Must be called manually because the above change doesn't trigger a change event
     }
     $("#generator-form").on("change", updateGeneratorInput);
     $("#generator-form").on("submit", function (e) {

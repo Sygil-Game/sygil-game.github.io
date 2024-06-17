@@ -15,7 +15,7 @@ class PresetManager {
 
     set(obj) {
         if (!obj.name) throw new Error('Preset must have a name');
-        if (this.defaults.includes(obj.name)) throw new Error(`Cannot overwrite default preset "${obj.name}"`);
+        if (this.isDefault(obj.name)) throw new Error(`Cannot overwrite default preset "${obj.name}"`);
         this.presets[obj.name] = JSON.parse(JSON.stringify(obj));
         this.listeners.forEach(listener => listener(this));
     }
@@ -26,7 +26,7 @@ class PresetManager {
     }
 
     remove(name) {
-        if (this.defaults.includes(name)) throw new Error(`Cannot delete default preset "${name}"`);
+        if (this.isDefault(name)) throw new Error(`Cannot delete default preset "${name}"`);
         delete this.presets[name];
         this.listeners.forEach(listener => listener(this));
     }
