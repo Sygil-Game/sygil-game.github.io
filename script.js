@@ -162,10 +162,8 @@ $(document).ready(async function () {
         navigator.clipboard.writeText($("#wordpacks .document-browser .tab-pane.show textarea").text());
     });
     $("#wordpack-corner-buttons button[name='download']").on("click", function () {
-        const a = document.createElement("a");
-        a.href = URL.createObjectURL(new Blob([$("#wordpacks .document-browser .tab-pane.show textarea").val()], { type: "text/plain" }));
-        a.download = `${$("#wordpack-view-select").val()}.txt`;
-        a.click();
+        saveAs(new Blob([$("#wordpacks .document-browser .tab-pane.show textarea").val()], { type: "text/plain" }),
+            `${$("#wordpack-view-select").val()}.txt`);
     });
     $("#wordpack-corner-buttons button[name='delete']").on("click", () => {
         const select = $("#wordpack-view-select");
@@ -186,7 +184,13 @@ $(document).ready(async function () {
         navigator.clipboard.writeText(link);
     });
     $("#wordpack-corner-buttons button[name='download-all']").on("click", () => {
-        // TODO
+        const zip = new JSZip();
+        Object.keys(wordpacks.getAll(false))
+            .filter(name => !wordpacks.isDefault(name) || wordpacks.isDefaultModified(name))
+            .forEach(name => {
+                zip.file(`${name}.txt`, wordpacks.getRaw(name));
+            });
+        zip.generateAsync({ type: "blob" }).then(content => saveAs(content, "wordpacks.zip"));
     });
 
     // Save modifications to the wordpack content
