@@ -56,7 +56,7 @@ $(document).ready(function () {
     $(document).on('shown.bs.modal', '.modal, .popover', function () { $(this).find('input:text:visible:first').focus(); });
 
     // Initialize tooltips
-    whenAdded('[data-bs-toggle="tooltip"]', function () { new bootstrap.Tooltip(this) });
+    whenAdded('[data-bs-toggle="tooltip"]', function () { new bootstrap.Tooltip(this); });
 });
 
 // Async code that depends on fetched resources
@@ -115,7 +115,6 @@ $(document).ready(async function () {
     $("#wordpacks").on("shown.bs.tab", ".nav-link", function () {
         $("#wordpack-view-select").val($(this).data("tab-name")).selectpicker("refresh");
         updateWordpackCornerButtons();
-        $("#delete-wordpack").prop("disabled", !!wordpacks.isDefault($("#wordpack-view-select").val())); // Disable the delete button for default wordpacks
     });
 
     // Create the wordpack document browser
@@ -144,15 +143,11 @@ $(document).ready(async function () {
             $("#wordpack-corner-buttons button[name='reset']").toggleClass("d-none", !wordpacks.isDefault(selectedWordpack));
             $("#wordpack-corner-buttons button[name='reset']").prop("disabled", !wordpacks.isDefaultModified(selectedWordpack));
             $("#wordpack-corner-buttons button[name='reset'] + div > button").toggleClass("rounded-start", !wordpacks.isDefault(selectedWordpack));
+            $("#wordpack-corner-buttons button[name='delete']").toggle(!wordpacks.isDefault(selectedWordpack)); // Hide the delete button for default wordpacks
         }
-    }
-    function animateSuccess(button) {
-        $(button).addClass("btn-outline-success");
-        setTimeout(() => $(button).removeClass("btn-outline-success"), 500);
     }
     $("#wordpack-corner-buttons button[name='reset']").on("click", function () {
         wordpacks.set($("#wordpack-view-select").val(), wordpacks.getDefault($("#wordpack-view-select").val()));
-        animateSuccess(this);
     });
     $("#wordpack-corner-buttons button[name='link']").on("click", function () {
         const shareData = [{
@@ -161,17 +156,37 @@ $(document).ready(async function () {
             group: "Wordpacks"
         }];
         const link = `${window.location.origin}/?share=${compressUrlSafe(JSON.stringify(shareData))}`;
-        navigator.clipboard.writeText(link).then(() => animateSuccess(this))
+        navigator.clipboard.writeText(link);
     });
     $("#wordpack-corner-buttons button[name='copy']").on("click", function () {
-        navigator.clipboard.writeText($("#wordpacks .document-browser .tab-pane.show textarea").text()).then(() => animateSuccess(this))
+        navigator.clipboard.writeText($("#wordpacks .document-browser .tab-pane.show textarea").text());
     });
     $("#wordpack-corner-buttons button[name='download']").on("click", function () {
         const a = document.createElement("a");
         a.href = URL.createObjectURL(new Blob([$("#wordpacks .document-browser .tab-pane.show textarea").val()], { type: "text/plain" }));
         a.download = `${$("#wordpack-view-select").val()}.txt`;
         a.click();
-        animateSuccess(this);
+    });
+    $("#wordpack-corner-buttons button[name='delete']").on("click", () => {
+        const select = $("#wordpack-view-select");
+        bootbox.confirm(`Are you sure you want to delete the wordpack "${select.val()}"?`, (confirmed) => {
+            if (!confirmed) return;
+            wordpacks.remove(select.val());
+        });
+    });
+    $("#wordpack-corner-buttons button[name='link-all']").on("click", () => {
+        const shareData = Object.keys(wordpacks.getAll(false))
+            .filter(name => !wordpacks.isDefault(name) || wordpacks.isDefaultModified(name))
+            .map(name => ({
+                name: name,
+                content: wordpacks.getRaw(name),
+                group: "Wordpacks"
+            }));
+        const link = `${window.location.origin}/?share=${compressUrlSafe(JSON.stringify(shareData))}`;
+        navigator.clipboard.writeText(link);
+    });
+    $("#wordpack-corner-buttons button[name='download-all']").on("click", () => {
+        // TODO
     });
 
     // Save modifications to the wordpack content
@@ -288,28 +303,6 @@ $(document).ready(async function () {
             $('#import-wordpack-popover').popoverX('hide');
         })();
         return false;
-    });
-
-    // Share all wordpacks button
-    $("#share-wordpack-all").on("click", function () {
-        const shareData = Object.keys(wordpacks.getAll(false))
-            .filter(name => !wordpacks.isDefault(name) || wordpacks.isDefaultModified(name))
-            .map(name => ({
-                name: name,
-                content: wordpacks.getRaw(name),
-                group: "Wordpacks"
-            }));
-        const link = `${window.location.origin}/?share=${compressUrlSafe(JSON.stringify(shareData))}`;
-        navigator.clipboard.writeText(link).then(() => animateSuccess(this))
-    });
-
-    // Delete wordpack button
-    $("#delete-wordpack").on("click", () => {
-        const select = $("#wordpack-view-select");
-        bootbox.confirm(`Are you sure you want to delete the wordpack "${select.val()}"?`, (confirmed) => {
-            if (!confirmed) return;
-            wordpacks.remove(select.val());
-        });
     });
 
     /* Presets */

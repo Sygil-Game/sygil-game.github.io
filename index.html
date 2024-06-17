@@ -157,7 +157,7 @@
             <!-- Wordpacks -->
             <div class="tab-pane" id="wordpacks">
                 <p>One Sygil per line. Any words after <code>===</code> will be part of the extended wordpack.</p>
-                <div class="input-group">
+                <div class="input-group" id="wordpack-bar">
                     <label class="input-group-text rounded-bottom-0" style="min-width: 15ch;"
                         for="wordpack-view-select">Wordpack:</label>
                     <select class="flex-grow-1 wordpack-select wordpack-select-no-extended" id="wordpack-view-select"
@@ -188,10 +188,6 @@
                             </div>
                         </form>
                     </div>
-                    <button class="btn btn-outline-secondary" id="import-wordpack" data-toggle="popover-x"
-                        data-target="#import-wordpack-popover" data-placement="auto-bottom" data-bs-toggle="tooltip"
-                        data-bs-trigger="hover" data-bs-placement="top" data-bs-title="Import wordpack"><i
-                            class="bi bi-upload"></i></button>
                     <div id="import-wordpack-popover" class="popover popover-x popover-default">
                         <div class="popover-header popover-title bg-body-secondary d-flex">
                             <p class="text-body m-0">Import Wordpack</p>
@@ -215,12 +211,10 @@
                             </div>
                         </form>
                     </div>
-                    <button class="btn btn-outline-secondary" id="share-wordpack-all" data-bs-toggle="tooltip"
-                        data-bs-trigger="hover" data-bs-placement="top"
-                        data-bs-title="Copy sharing link for all wordpacks"><i class="bi bi-link-45deg"></i></button>
-                    <button class="btn btn-outline-danger rounded-bottom-0" id="delete-wordpack"
-                        data-bs-toggle="tooltip" data-bs-trigger="hover" data-bs-placement="top"
-                        data-bs-title="Delete wordpack"><i class="bi bi-trash"></i></button>
+                    <button class="btn btn-outline-secondary" id="import-wordpack" data-toggle="popover-x"
+                        data-target="#import-wordpack-popover" data-placement="auto-bottom" data-bs-toggle="tooltip"
+                        data-bs-trigger="hover" data-bs-placement="top" data-bs-title="Upload wordpack"><i
+                            class="bi bi-file-earmark-arrow-up"></i></button>
                 </div>
                 <div class="position-relative">
                     <div class="btn-group position-absolute top-0 end-0 mt-2 me-2 d-none" id="wordpack-corner-buttons">
@@ -229,9 +223,7 @@
                                 class="bi bi-arrow-clockwise"></i></button>
                         <div class="dropdown btn-group">
                             <button class="btn btn-outline-secondary rounded-end" type="button"
-                                data-bs-toggle="dropdown">
-                                <i class="bi bi-box-arrow-up"></i>
-                            </button>
+                                data-bs-toggle="dropdown"><i class="bi bi-box-arrow-up"></i></button>
                             <ul class="dropdown-menu">
                                 <li><button class="dropdown-item" type="button" name="link"><i
                                             class="bi bi-link-45deg"></i>&nbsp;Copy link</button></li>
@@ -239,6 +231,15 @@
                                             class="bi bi-clipboard"></i>&nbsp;Copy to clipboard</button></li>
                                 <li><button class="dropdown-item" type="button" name="download"><i
                                             class="bi bi-download"></i>&nbsp;Download</button></li>
+                                <li><button class="dropdown-item text-danger" type="button" name="delete"><i
+                                            class="bi bi-trash"></i>&nbsp;Delete</button></li>
+                                <li>
+                                    <hr class="dropdown-divider">
+                                </li>
+                                <li><button class="dropdown-item" type="button" name="link-all"><i
+                                            class="bi bi-link-45deg"></i>&nbsp;Copy link for all</button></li>
+                                <li><button class="dropdown-item" type="button" name="download-all"><i
+                                            class="bi bi-download"></i>&nbsp;Download all</button></li>
                             </ul>
                         </div>
                     </div>

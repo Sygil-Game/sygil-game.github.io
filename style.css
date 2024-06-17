@@ -59,16 +59,16 @@ html[data-bs-theme="dark"] blockquote {
     display: none;
 }
 
-#wordpack-corner-buttons button:not(.btn-outline-success) {
-    transition: 0.3s;
-}
-
 .btn {
     --bs-btn-disabled-opacity: 0.3;
 }
 
-#wordpacks>.input-group {
+#wordpack-bar {
     margin-bottom: -1px;
+}
+
+#wordpack-bar>button:last-child {
+    border-bottom-right-radius: 0;
 }
 
 /* Document browser styles */
