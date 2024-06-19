@@ -65,25 +65,27 @@
                         <label class="input-group-text" for="generator-preset-select">Preset:</label>
                         <select class="preset-select" id="generator-preset-select" data-style="rounded-0"
                             name="item-select"></select>
-                        <button class="btn btn-outline-secondary" name="new" data-toggle="popover-x"
-                            data-target="#new-preset-popover" data-placement="auto-bottom" data-bs-toggle="tooltip"
-                            data-bs-trigger="hover" data-bs-placement="top" data-bs-title="Create new preset"><i
-                                class="bi bi-plus"></i></button>
-                        <button class="btn btn-outline-secondary" name="upload" data-toggle="popover-x"
-                            data-target="#import-preset-popover" data-placement="auto-bottom" data-bs-toggle="tooltip"
-                            data-bs-trigger="hover" data-bs-placement="top" data-bs-title="Upload preset"><i
-                                class="bi bi-file-earmark-arrow-up"></i></button>
                         <button class="btn btn-outline-secondary rounded-end" type="button" data-bs-toggle="dropdown"><i
-                                class="bi bi-box-arrow-up"></i></button>
+                                class="bi bi-gear"></i></button>
                         <ul class="dropdown-menu">
+                            <li><button class="dropdown-item" type="button" name="new" data-bs-toggle="modal"
+                                    data-bs-target="#new-preset-modal"><i class="bi bi-plus"></i>&nbsp;Create
+                                    new</button></li>
+                            <li><button class="dropdown-item" type="button" name="upload" data-bs-toggle="modal"
+                                    data-bs-target="#upload-preset-modal"><i
+                                        class="bi bi-file-earmark-arrow-up"></i>&nbsp;Upload
+                                    new</button></li>
+                            <li><button class="dropdown-item text-danger" type="button" name="delete"><i
+                                        class="bi bi-trash"></i>&nbsp;Delete</button></li>
+                            <li>
+                                <hr class="dropdown-divider">
+                            </li>
                             <li><button class="dropdown-item" type="button" name="link"><i
                                         class="bi bi-link-45deg"></i>&nbsp;Copy link</button></li>
                             <li><button class="dropdown-item" type="button" name="copy"><i
                                         class="bi bi-clipboard"></i>&nbsp;Copy to clipboard</button></li>
                             <li><button class="dropdown-item" type="button" name="download"><i
                                         class="bi bi-download"></i>&nbsp;Download</button></li>
-                            <li><button class="dropdown-item text-danger" type="button" name="delete"><i
-                                        class="bi bi-trash"></i>&nbsp;Delete</button></li>
                             <li>
                                 <hr class="dropdown-divider">
                             </li>
@@ -92,6 +94,29 @@
                             <li><button class="dropdown-item" type="button" name="download-all"><i
                                         class="bi bi-file-earmark-zip"></i>&nbsp;Download all</button></li>
                         </ul>
+                    </div>
+                    <div id="import-preset-popover" class="popover popover-x popover-default">
+                        <div class="popover-header popover-title bg-body-secondary d-flex">
+                            <p class="text-body m-0">Import Wordpack</p>
+                            <button type="button" class="btn-close ms-auto" data-dismiss="popover-x"></button>
+                        </div>
+                        <form>
+                            <div class="popover-body popover-content">
+                                <input class="form-control form-control-sm mb-2" type="file" id="import-wordpack-file"
+                                    name="wordpack-file" multiple required accept=".txt">
+                                <div class="form-check invisible">
+                                    <input class="form-check-input" type="checkbox"
+                                        id="import-wordpack-overwrite-checkbox">
+                                    <label class="form-check-label text-danger"
+                                        for="import-wordpack-overwrite-checkbox">Overwrite wordpacks
+                                        <span></span>?</label>
+                                </div>
+                            </div>
+                            <div class="popover-footer bg-body-secondary border-secondary-subtle">
+                                <button type="button" class="btn btn-secondary" data-dismiss="popover-x">Cancel</button>
+                                <input type="submit" class="btn btn-primary ms-auto" value="Import">
+                            </div>
+                        </form>
                     </div>
                 </div>
                 <div class="container px-0 border rounded position-relative">
@@ -298,6 +323,58 @@
             </div>
         </div>
     </div>
+    <form novalidate>
+        <div class="modal fade" id="new-preset-modal" tabindex="-1">
+            <div class="modal-dialog modal-dialog-scrollable">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Create New Preset</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <label for="new-preset-name">Name:</label>
+                        <input type="text" id="new-preset-name" class="form-control w-100" placeholder="New preset name"
+                            name="preset-name" required>
+                        <div class="invalid-feedback"></div>
+                        <br>
+                        <p>Preset will be created based on the current generator settings:</p>
+                        <code id="new-preset-modal-codeblock" class="w-100"></code>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <input type="submit" class="btn btn-primary ms-auto" value="Create">
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </form>
+    <form novalidate>
+        <div class="modal fade" id="upload-preset-modal" tabindex="-1">
+            <div class="modal-dialog modal-dialog-scrollable">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Upload Preset</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <input class="form-control form-control-sm mb-2" type="file" id="upload-preset-file"
+                            name="preset-file" required accept=".json">
+                        <div class="form-check invisible">
+                            <input class="form-check-input" type="checkbox" id="upload-preset-overwrite-checkbox">
+                            <label class="form-check-label text-danger" for="upload-preset-overwrite-checkbox">Overwrite
+                                presets <span></span>?</label>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <input type="submit" class="btn btn-primary ms-auto" value="Create">
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </form>
 </body>
 
 </html>

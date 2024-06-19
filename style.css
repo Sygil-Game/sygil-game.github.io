@@ -49,6 +49,12 @@ html[data-bs-theme="dark"] blockquote {
     display: none;
 }
 
+#new-preset-modal-codeblock {
+    /* Preserve newlines and indentation */
+    white-space: pre;
+    display: inline-block;
+}
+
 /* Fix bootstrap-select CSS glitch that breaks dark mode */
 .bootstrap-select .no-results {
     background: unset;

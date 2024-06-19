@@ -10,7 +10,7 @@ class PresetManager {
     }
 
     get(name) {
-        return JSON.parse(JSON.stringify(this.presets[name]));
+        return name in this.presets ? JSON.parse(JSON.stringify(this.presets[name])) : null;
     }
 
     set(obj) {

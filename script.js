@@ -152,7 +152,7 @@ $(document).ready(async function () {
 
     // Sets up functionality for all buttons in an export dropdown (e.g. copy link, download)
     // Used for both wordpacks and presets
-    function handleItemButtons({ groupName, root, manager, select, getCurrentContent, getAll }) {
+    function handleItemButtons({ groupName, root, manager, select, getCurrentContent, getAll, filetype }) {
         $(root).find("button[name='link']").on("click", function () {
             const shareData = [{
                 name: $(select).val(),
@@ -167,7 +167,7 @@ $(document).ready(async function () {
         });
         $(root).find("button[name='download']").on("click", function () {
             saveAs(new Blob([getCurrentContent()], { type: "text/plain" }),
-                `${$(select).val()}.txt`);
+                `${$(select).val()}.${filetype}`);
         });
         $(root).find("button[name='delete']").on("click", () => {
             bootbox.confirm(`Are you sure you want to delete the ${groupName.toLowerCase().replace(/s$/, "")} "${$(select).val()}"?`, (confirmed) => {
@@ -191,7 +191,7 @@ $(document).ready(async function () {
         });
         $(root).find("button[name='download-all']").on("click", () => {
             const zip = new JSZip();
-            Object.entries(getAll()).forEach(([name, content]) => zip.file(`${name}.txt`, content));
+            Object.entries(getAll()).forEach(([name, content]) => zip.file(`${name}.${filetype}`, content));
             zip.generateAsync({ type: "blob" }).then(content => saveAs(content, `${groupName}.zip`));
         });
     }
@@ -204,7 +204,8 @@ $(document).ready(async function () {
         getCurrentContent: () => $("#wordpacks .document-browser .tab-pane.show textarea").val(),
         getAll: () => Object.fromEntries(Object.keys(wordpacks.getAll(false))
             .filter(name => !wordpacks.isDefault(name) || wordpacks.isDefaultModified(name))
-            .map(name => [name, wordpacks.getRaw(name)]))
+            .map(name => [name, wordpacks.getRaw(name)])),
+        filetype: "txt"
     });
 
     handleItemButtons({
@@ -215,7 +216,8 @@ $(document).ready(async function () {
         getCurrentContent: () => JSON.stringify(presets.get($("#generator-preset-select").val())),
         getAll: () => Object.fromEntries(Object.entries(presets.getAll())
             .filter(([name, content]) => !presets.isDefault(name))
-            .map(([name, content]) => [name, JSON.stringify(content)]))
+            .map(([name, content]) => [name, JSON.stringify(content)])),
+        filetype: "json"
     });
 
     // Save modifications to the wordpack content
@@ -599,4 +601,49 @@ $(document).ready(async function () {
         generator_input.sets.splice(setIndex + 1, 0, JSON.parse(JSON.stringify(generator_input.sets[setIndex])))));
     $("body").on("click", ".set-delete", wrap((setIndex, groupIndex) =>
         generator_input.sets.splice(setIndex, 1)));
+
+    $("#new-preset-modal").on("show.bs.modal", function () {
+        $("#new-preset-modal-codeblock").text(JSON.stringify(generator_input, null, 2));
+    });
+
+    $("form:has(#new-preset-modal)").on('submit', function () {
+        return false;
+    });
+
+    $('form:has(#upload-preset-modal) [name="preset-file"]').on("change", async function () {
+        const names = await Promise.all(Array.from($(this).prop("files")).map(readFile)).then(contents => contents.map(JSON.parse).map(preset => preset.name));
+        const overwriteCheckbox = $("#upload-preset-overwrite-checkbox");
+        overwriteCheckbox.prop("checked", false);
+        const existingNames = names.filter(name => presets.get(name));
+        overwriteCheckbox.parent().toggleClass("invisible", existingNames.length == 0);
+        $("label[for='upload-preset-overwrite-checkbox'] span").text(`"${existingNames.join('", "')}"`);
+    });
+
+    $('form:has(#upload-preset-modal)').on('submit', function () {
+        // File reading is async but we need to return false immediately to prevent form submission, so we have an inner async wrapper
+        (async () => {
+            // Read files
+            const files = Array.from($(this).find("[name='preset-file']").prop("files"));
+            const newPresets = await Promise.all(files.map(readFile)).then(contents => contents.map(JSON.parse));
+
+            // Create presets, handling duplicate names
+            for (const preset of newPresets) {
+                if (!$(this).find("#upload-preset-overwrite-checkbox").prop("checked")) {
+                    while (presets.get(preset.name)) {
+                        const regex = / \((\d+)\)$/;
+                        const match = regex.exec(preset.name);
+                        const copyNum = match ? parseInt(match[1]) + 1 : 2;
+                        preset.name = `${preset.name.replace(regex, "")} (${copyNum})`;
+                    }
+                }
+                presets.set(preset);
+            }
+
+            $(this).clearInputs();
+            $('#generator-preset-select').val(newPresets[newPresets.length - 1].name).selectpicker("refresh").trigger("change"); // Set to last imported preset
+
+            $('#upload-preset-modal').popoverX('hide');
+        })();
+        return false;
+    });
 });
