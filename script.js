@@ -364,14 +364,15 @@ $(document).ready(async function () {
         }
     });
 
-    // Handle hiding of delete preset button for default presets
-    function updateDeletePresetButton() {
+    // Handle hiding of some preset buttons for default presets
+    function updatePresetButtons() {
         const val = $("#generator-preset-select").val();
         $("#generator-preset-bar button[name='delete']").toggle(val && !presets.isDefault(val));
+        $("#generator-preset-bar button[name='save']").toggle(val && !presets.isDefault(val));
     }
-    updateDeletePresetButton();
-    presets.onChange(updateDeletePresetButton);
-    $("#generator-preset-select").on("changed.bs.select", updateDeletePresetButton);
+    updatePresetButtons();
+    presets.onChange(updatePresetButtons);
+    $("#generator-preset-select").on("changed.bs.select", updatePresetButtons);
     $("#delete-preset").on("click", () => {
         const select = $("#generator-preset-select");
         bootbox.confirm(`Are you sure you want to delete the preset "${select.val()}"?`, (confirmed) => {
@@ -498,13 +499,14 @@ $(document).ready(async function () {
     function updateGeneratorInput() {
         const sets = getPresetFromForm();
         overwrite(generator_input, {
-            name: Object.values(presets.getAll()).find(preset => _.isEqual(preset.sets, sets))?.name,
             schema_version: CURRENT_SCHEMA_VERSION,
             sets: sets,
             wordpacks: wordpacks.getWordpacksFor(sets)
         });
-        $("#generator-preset-select").val(generator_input.name).selectpicker("refresh");
-        updateDeletePresetButton(); // Must be called manually because the above change doesn't trigger a change event
+        if ($("#generator-preset-select").val()) {
+            const selectedPresetSets = presets.get($("#generator-preset-select").val())?.sets;
+            $("#generator-preset-select").next().find(".filter-option").toggleClass("strikethrough text-muted", !_.isEqual(selectedPresetSets, sets))
+        }
     }
     $("#generator-form").on("change", updateGeneratorInput);
     $("#generator-form").on("submit", function (e) {
@@ -602,10 +604,14 @@ $(document).ready(async function () {
     $("body").on("click", ".set-delete", wrap((setIndex, groupIndex) =>
         generator_input.sets.splice(setIndex, 1)));
 
+    $("#generator-preset-bar button[name='save']").on("click", function () {
+        presets.set(Object.assign({}, generator_input, { name: $("#generator-preset-select").val() }));
+        $("#generator-preset-select").next().find(".filter-option").removeClass("strikethrough text-muted");
+    });
+
     $("#new-preset-modal").on("show.bs.modal", function () {
         $("#new-preset-modal-codeblock").text(JSON.stringify(generator_input, null, 2));
     });
-
     $("form:has(#new-preset-modal)").on('submit', function () {
         return false;
     });
@@ -618,7 +624,6 @@ $(document).ready(async function () {
         overwriteCheckbox.parent().toggleClass("invisible", existingNames.length == 0);
         $("label[for='upload-preset-overwrite-checkbox'] span").text(`"${existingNames.join('", "')}"`);
     });
-
     $('form:has(#upload-preset-modal)').on('submit', function () {
         // File reading is async but we need to return false immediately to prevent form submission, so we have an inner async wrapper
         (async () => {

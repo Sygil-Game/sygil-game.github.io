@@ -77,6 +77,10 @@ html[data-bs-theme="dark"] blockquote {
     border-bottom-right-radius: 0;
 }
 
+.strikethrough {
+    text-decoration: line-through;
+}
+
 /* Document browser styles */
 .document-browser .nav-link {
     border-color: var(--bs-secondary-border-subtle);
