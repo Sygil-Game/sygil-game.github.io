@@ -102,8 +102,8 @@
                                         class="bi bi-file-earmark-arrow-up"></i>&nbsp;Upload
                                     new</button></li>
                             <li><button class="dropdown-item" type="button" name="paste" data-bs-toggle="modal"
-                                    data-bs-target="#paste-preset-modal"><i
-                                        class="bi bi-clipboard"></i>&nbsp;Paste new</button></li>
+                                    data-bs-target="#paste-preset-modal"><i class="bi bi-clipboard"></i>&nbsp;Paste
+                                    new</button></li>
                             <li><button class="dropdown-item text-danger" type="button" name="delete"><i
                                         class="bi bi-trash"></i>&nbsp;Delete</button></li>
                             <li>
@@ -362,10 +362,14 @@
                     </div>
                     <div class="modal-body">
                         <label for="new-preset-name">Name:</label>
-                        <input type="text" id="new-preset-name" class="form-control w-100" placeholder="New preset name"
-                            name="preset-name" required>
-                        <div class="invalid-feedback"></div>
-                        <br>
+                        <input type="text" id="new-preset-name" class="form-control w-100 mb-2"
+                            placeholder="New preset name" name="preset-name" required>
+                        <div class="form-check invisible">
+                            <input class="form-check-input" type="checkbox" id="new-preset-overwrite-checkbox"
+                                name="overwrite">
+                            <label class="form-check-label text-danger" for="new-preset-overwrite-checkbox"
+                                name="overwrite-label">Overwrite preset <span></span>?</label>
+                        </div>
                         <p>Preset will be created based on the current generator settings:</p>
                         <code id="new-preset-modal-codeblock" class="w-100 codeblock"></code>
                     </div>
@@ -390,9 +394,10 @@
                         <input class="form-control form-control-sm mb-2" type="file" id="upload-preset-file"
                             name="preset-file" required multiple accept=".json">
                         <div class="form-check invisible">
-                            <input class="form-check-input" type="checkbox" id="upload-preset-overwrite-checkbox" name="overwrite">
-                            <label class="form-check-label text-danger" for="upload-preset-overwrite-checkbox" name="overwrite-label">Overwrite
-                                presets <span></span>?</label>
+                            <input class="form-check-input" type="checkbox" id="upload-preset-overwrite-checkbox"
+                                name="overwrite">
+                            <label class="form-check-label text-danger" for="upload-preset-overwrite-checkbox"
+                                name="overwrite-label">Overwrite presets <span></span>?</label>
                         </div>
                     </div>
                     <div class="modal-footer">
@@ -406,18 +411,19 @@
     <form novalidate>
         <div class="modal fade" id="paste-preset-modal" tabindex="-1">
             <div class="modal-dialog modal-dialog-centered">
-                <div class="modal-content"  style="height: 80vh">
+                <div class="modal-content" style="height: 80vh">
                     <div class="modal-header">
                         <h5 class="modal-title">Paste Preset</h5>
                         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                     </div>
                     <div class="modal-body d-flex flex-column">
-                        <textarea class="form-control form-control-sm mb-2 h-100 flex-grow-1" id="paste-preset-textarea" name="preset-text"
-                            required></textarea>
+                        <textarea class="form-control form-control-sm mb-2 h-100 flex-grow-1" id="paste-preset-textarea"
+                            name="preset-text" required></textarea>
                         <div class="form-check invisible">
-                            <input class="form-check-input" type="checkbox" id="paste-preset-overwrite-checkbox" name="overwrite">
-                            <label class="form-check-label text-danger" for="paste-preset-overwrite-checkbox" name="overwrite-label">Overwrite
-                                presets <span></span>?</label>
+                            <input class="form-check-input" type="checkbox" id="paste-preset-overwrite-checkbox"
+                                name="overwrite">
+                            <label class="form-check-label text-danger" for="paste-preset-overwrite-checkbox"
+                                name="overwrite-label">Overwrite presets <span></span>?</label>
                         </div>
                     </div>
                     <div class="modal-footer">

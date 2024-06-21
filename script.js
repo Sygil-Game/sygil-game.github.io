@@ -627,7 +627,27 @@ $(document).ready(async function () {
     $("#new-preset-modal").on("show.bs.modal", function () {
         $("#new-preset-modal-codeblock").text(JSON.stringify(generator_input, null, 2));
     });
+    $("#new-preset-modal").on("hidden.bs.modal", function () {
+        $(this).clearInputs();
+        updateOverwriteCheckboxForNames($("#new-preset-modal"), []);
+    });
+    $("#new-preset-modal input[name='preset-name']").on("input", function () {
+        updateOverwriteCheckboxForNames($("#new-preset-modal"), [$(this).val()]);
+    });
     $("form:has(#new-preset-modal)").on('submit', function () {
+        const presetName = $("#new-preset-name").val();
+        if (!presetName) return false;
+        const preset = { name: presetName, sets: generator_input.sets }
+        if (!$(this).find("input[name='overwrite']").prop("checked")) {
+            while (presets.get(preset.name)) {
+                const regex = / \((\d+)\)$/;
+                const match = regex.exec(preset.name);
+                const copyNum = match ? parseInt(match[1]) + 1 : 2;
+                preset.name = `${preset.name.replace(regex, "")} (${copyNum})`;
+            }
+        }
+        presets.set(preset);
+        $(this).find(".modal").modal('hide');
         return false;
     });
 
