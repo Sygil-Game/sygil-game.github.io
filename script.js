@@ -370,11 +370,15 @@ $(document).ready(async function () {
         }
     });
 
-    // Handle hiding of some preset buttons for default presets
+    // Handle hiding of some preset buttons for default presets / blank preset
     function updatePresetButtons() {
         const val = $("#generator-preset-select").val();
         $("#generator-preset-bar button[name='delete']").toggle(val && !presets.isDefault(val));
         $("#generator-preset-bar button[name='save']").toggle(val && !presets.isDefault(val));
+        $(["#generator-preset-bar button[name='link']",
+            "#generator-preset-bar button[name='copy']",
+            "#generator-preset-bar button[name='download']",
+            "#generator-preset-bar .post-single-buttons-divider"].join(", ")).toggle(!!val);
     }
     updatePresetButtons();
     presets.onChange(updatePresetButtons);
