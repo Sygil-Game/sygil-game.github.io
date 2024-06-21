@@ -1,4 +1,10 @@
 import { compressUrlSafe, decompressUrlSafe } from './lib/lzma-url.mjs'
+import Ajv from "ajv";
+
+
+// Set up JSON Schema validation for presets
+const ajv = new Ajv();
+const validatePreset = ajv.compile(presets.SCHEMA)
 
 
 // Disable initial animations for state restore
@@ -495,6 +501,14 @@ $(document).ready(async function () {
             console.error("Invalid form data:", e);
         }
     }
+    // Update the preset select
+    function updatePresetSelect() {
+        if ($("#generator-preset-select").val()) {
+            const selectedPresetSets = presets.get($("#generator-preset-select").val())?.sets;
+            $("#generator-preset-select").next().find(".filter-option").toggleClass("strikethrough text-muted", !_.isEqual(selectedPresetSets, getPresetFromForm()))
+        }
+    }
+    presets.onChange(updatePresetSelect);
     // Update the generator input from the form
     function updateGeneratorInput() {
         const sets = getPresetFromForm();
@@ -503,10 +517,7 @@ $(document).ready(async function () {
             sets: sets,
             wordpacks: wordpacks.getWordpacksFor(sets)
         });
-        if ($("#generator-preset-select").val()) {
-            const selectedPresetSets = presets.get($("#generator-preset-select").val())?.sets;
-            $("#generator-preset-select").next().find(".filter-option").toggleClass("strikethrough text-muted", !_.isEqual(selectedPresetSets, sets))
-        }
+        updatePresetSelect();
     }
     $("#generator-form").on("change", updateGeneratorInput);
     $("#generator-form").on("submit", function (e) {
@@ -613,6 +624,73 @@ $(document).ready(async function () {
         $("#new-preset-modal-codeblock").text(JSON.stringify(generator_input, null, 2));
     });
     $("form:has(#new-preset-modal)").on('submit', function () {
+        return false;
+    });
+
+    function updateOverwriteCheckboxForNames(root, names) {
+        const overwriteCheckbox = $(root).find("input[name='overwrite']");
+        overwriteCheckbox.prop("checked", false);
+        const existingNames = names.filter(name => presets.get(name));
+        overwriteCheckbox.parent().toggleClass("invisible", existingNames.length == 0);
+        $(root).find("label[name='overwrite-label'] span").text(`"${existingNames.join('", "')}"`);
+    }
+
+
+    function handlePresetModalSubmit(root, getNewPresets) {
+        const { valid, newPresets, errors } = getNewPresets();
+        if (!valid) {
+            bootbox.alert({
+                title: "Invalid preset data",
+                message: errors.length > 0 ? `<code class="codeblock">${JSON.stringify(errors, null, 2)}</code>` : "Invalid JSON"
+            });
+            return;
+        }
+
+        // Create presets, handling duplicate names
+        for (const preset of newPresets) {
+            if (!$(root).find("input[name='overwrite']").prop("checked")) {
+                while (presets.get(preset.name)) {
+                    const regex = / \((\d+)\)$/;
+                    const match = regex.exec(preset.name);
+                    const copyNum = match ? parseInt(match[1]) + 1 : 2;
+                    preset.name = `${preset.name.replace(regex, "")} (${copyNum})`;
+                }
+            }
+            presets.set(preset);
+        }
+
+        $(root).clearInputs();
+        $(root).find(".modal").modal('hide');
+    }
+
+    function getPastedPresets() {
+        let valid = false;
+        let newPresets;
+        const errors = [];
+        try {
+            newPresets = JSON.parse($("#paste-preset-textarea").val());
+            if (!Array.isArray(newPresets)) newPresets = [newPresets];
+            valid = newPresets.map(p => {
+                const result = validatePreset(p);
+                errors.push(validatePreset.errors);
+                return result;
+            }).every(Boolean);
+        } catch { };
+        if (!newPresets) newPresets = [];
+        return { valid, newPresets, errors };
+    }
+    $("#paste-preset-textarea").on("input", function () {
+        const { valid, newPresets, errors } = getPastedPresets();
+        $(this).toggleClass("border-success", valid);
+        $(this).toggleClass("border-danger", !valid && $(this).val().length > 0);
+        updateOverwriteCheckboxForNames($("#paste-preset-modal"), valid ? newPresets.map(p => p.name) : []);
+    });
+    $("form:has(#paste-preset-modal)").on('submit', function () {
+        try {
+            handlePresetModalSubmit(this, getPastedPresets);
+        } catch (e) {
+            console.error(e);
+        }
         return false;
     });
 

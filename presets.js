@@ -46,6 +46,40 @@ class PresetManager {
     onChange(listener) {
         this.listeners.push(listener);
     }
+
+    SCHEMA = {
+        "type": "object",
+        "properties": {
+            "name": { "type": "string" },
+            "schema_version": { "type": "number" },
+            "sets": {
+                "type": "array",
+                "items": {
+                    "type": "object",
+                    "properties": {
+                        "name": { "type": "string" },
+                        "groups": {
+                            "type": "array",
+                            "items": {
+                                "type": "object",
+                                "properties": {
+                                    "wordpacks": {
+                                        "type": "array",
+                                        "items": { "type": "string" }
+                                    },
+                                    "num_words": { "type": "number" }
+                                },
+                                "required": ["wordpacks", "num_words"]
+                            }
+                        },
+                        "players": { "type": "number" }
+                    },
+                    "required": ["name", "groups", "players"]
+                }
+            }
+        },
+        "required": ["name", "schema_version", "sets"]
+    };
 }
 
 window.presets = new PresetManager();

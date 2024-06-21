@@ -16,6 +16,29 @@
         integrity="sha384-AsoWNxsuu73eGp2MPWHa77155fyqP9rueKOeG4t2d/AD4eyBqL20TClzfbAkrul4" crossorigin="anonymous" />
     <link rel="stylesheet" type="text/css" href="style.css">
 
+    <!--
+    JSPM Generator Import Map
+    Edit URL: https://generator.jspm.io/#U2JhYGBkDM0rySzJSU1hSMwqc7DQMzTTMwAABZc3LxkA
+    -->
+    <script type="importmap">
+    {
+      "imports": {
+        "ajv": "https://ga.jspm.io/npm:ajv@8.16.0/dist/ajv.js"
+      },
+      "scopes": {
+        "https://ga.jspm.io/": {
+          "fast-deep-equal": "https://ga.jspm.io/npm:fast-deep-equal@3.1.3/index.js",
+          "json-schema-traverse": "https://ga.jspm.io/npm:json-schema-traverse@1.0.0/index.js",
+          "uri-js": "https://ga.jspm.io/npm:uri-js@4.4.1/dist/es5/uri.all.js"
+        }
+      }
+    }
+    </script>
+
+    <!-- ES Module Shims: Import maps polyfill for older browsers without import maps support (eg Safari 16.3) -->
+    <script async src="https://ga.jspm.io/npm:es-module-shims@1.10.0/dist/es-module-shims.js"
+        crossorigin="anonymous"></script>
+
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/underscore@stable/underscore-umd-min.js"></script>
     <script type="module" src="https://md-block.verou.me/md-block.js"></script>
@@ -68,14 +91,19 @@
                         <button class="btn btn-outline-secondary rounded-end" type="button" data-bs-toggle="dropdown"><i
                                 class="bi bi-gear"></i></button>
                         <ul class="dropdown-menu">
-                            <li><button class="dropdown-item" type="button" name="save""><i class="bi bi-floppy"></i>&nbsp;Save</button></li>
+                            <li><button class="dropdown-item" type="button" name="save""><i class=" bi
+                                    bi-floppy"></i>&nbsp;Save</button></li>
                             <li><button class="dropdown-item" type="button" name="new" data-bs-toggle="modal"
-                                    data-bs-target="#new-preset-modal"><i class="bi bi-plus-circle"></i>&nbsp;Save as</button>
+                                    data-bs-target="#new-preset-modal"><i class="bi bi-plus-circle"></i>&nbsp;Save
+                                    as</button>
                             </li>
                             <li><button class="dropdown-item" type="button" name="upload" data-bs-toggle="modal"
                                     data-bs-target="#upload-preset-modal"><i
                                         class="bi bi-file-earmark-arrow-up"></i>&nbsp;Upload
                                     new</button></li>
+                            <li><button class="dropdown-item" type="button" name="paste" data-bs-toggle="modal"
+                                    data-bs-target="#paste-preset-modal"><i
+                                        class="bi bi-clipboard"></i>&nbsp;Paste new</button></li>
                             <li><button class="dropdown-item text-danger" type="button" name="delete"><i
                                         class="bi bi-trash"></i>&nbsp;Delete</button></li>
                             <li>
@@ -339,7 +367,7 @@
                         <div class="invalid-feedback"></div>
                         <br>
                         <p>Preset will be created based on the current generator settings:</p>
-                        <code id="new-preset-modal-codeblock" class="w-100"></code>
+                        <code id="new-preset-modal-codeblock" class="w-100 codeblock"></code>
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
@@ -362,8 +390,8 @@
                         <input class="form-control form-control-sm mb-2" type="file" id="upload-preset-file"
                             name="preset-file" required accept=".json">
                         <div class="form-check invisible">
-                            <input class="form-check-input" type="checkbox" id="upload-preset-overwrite-checkbox">
-                            <label class="form-check-label text-danger" for="upload-preset-overwrite-checkbox">Overwrite
+                            <input class="form-check-input" type="checkbox" id="upload-preset-overwrite-checkbox" name="overwrite">
+                            <label class="form-check-label text-danger" for="upload-preset-overwrite-checkbox" name="overwrite-label">Overwrite
                                 presets <span></span>?</label>
                         </div>
                     </div>
@@ -371,7 +399,31 @@
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
                         <input type="submit" class="btn btn-primary ms-auto" value="Create">
                     </div>
-
+                </div>
+            </div>
+        </div>
+    </form>
+    <form novalidate>
+        <div class="modal fade" id="paste-preset-modal" tabindex="-1">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content"  style="height: 80vh">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Paste Preset</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body d-flex flex-column">
+                        <textarea class="form-control form-control-sm mb-2 h-100 flex-grow-1" id="paste-preset-textarea" name="preset-text"
+                            required></textarea>
+                        <div class="form-check invisible">
+                            <input class="form-check-input" type="checkbox" id="paste-preset-overwrite-checkbox" name="overwrite">
+                            <label class="form-check-label text-danger" for="paste-preset-overwrite-checkbox" name="overwrite-label">Overwrite
+                                presets <span></span>?</label>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <input type="submit" class="btn btn-primary ms-auto" value="Create">
+                    </div>
                 </div>
             </div>
         </div>

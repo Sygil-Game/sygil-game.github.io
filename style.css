@@ -49,10 +49,18 @@ html[data-bs-theme="dark"] blockquote {
     display: none;
 }
 
-#new-preset-modal-codeblock {
-    /* Preserve newlines and indentation */
+/* Preserve newlines and indentation */
+.codeblock {
     white-space: pre;
     display: inline-block;
+}
+
+/* Prevent bootbox alerts from overflowing the screen */
+.bootbox-alert .modal-content {
+    max-height: 90vh;
+}
+.bootbox-alert .modal-body {
+    overflow-y: auto;
 }
 
 /* Fix bootstrap-select CSS glitch that breaks dark mode */
@@ -80,6 +88,15 @@ html[data-bs-theme="dark"] blockquote {
 .strikethrough {
     text-decoration: line-through;
 }
+
+/* Turn off the blue highlight on textarea focus that bootstrap adds */
+textarea.form-control:focus{
+    border-color: var(--bs-border-color);
+    -webkit-box-shadow: none;
+    -moz-box-shadow: none;
+    box-shadow: none;
+}
+
 
 /* Document browser styles */
 .document-browser .nav-link {
