@@ -641,7 +641,7 @@ $(document).ready(async function () {
         if (!valid) {
             bootbox.alert({
                 title: "Invalid preset data",
-                message: errors.length > 0 ? `<code class="codeblock">${JSON.stringify(errors, null, 2)}</code>` : "Invalid JSON"
+                message: `<code class="codeblock">${JSON.stringify(errors, errorJSONreplacer, 2)}</code>`
             });
             return;
         }
@@ -663,70 +663,75 @@ $(document).ready(async function () {
         $(root).find(".modal").modal('hide');
     }
 
-    function getPastedPresets() {
-        let valid = false;
-        let newPresets;
+    function validateAllPresets(presetsText) {
+        if (!Array.isArray(presetsText)) presetsText = [presetsText];
+        let valid = true;
+        const newPresets = [];
         const errors = [];
-        try {
-            newPresets = JSON.parse($("#paste-preset-textarea").val());
-            if (!Array.isArray(newPresets)) newPresets = [newPresets];
-            valid = newPresets.map(p => {
-                const result = validatePreset(p);
-                errors.push(validatePreset.errors);
-                return result;
-            }).every(Boolean);
-        } catch { };
-        if (!newPresets) newPresets = [];
+        for (const presetText of presetsText) {
+            const suberrors = [];
+            try {
+                let item = JSON.parse(presetText);
+                if (!Array.isArray(item)) item = [item];
+                for (const subitem of item) {
+                    try {
+                        const result = validatePreset(subitem);
+                        suberrors.push(validatePreset.errors);
+                        valid &&= result;
+                    } catch (e) {
+                        valid = false;
+                        suberrors.push(e);
+                    }
+                    newPresets.push(subitem);
+                }
+                errors.push(suberrors);
+            } catch (e) {
+                valid = false;
+                errors.push(e);
+            }
+        }
+        if (newPresets.length == 0) valid = false;
         return { valid, newPresets, errors };
     }
     $("#paste-preset-textarea").on("input", function () {
-        const { valid, newPresets, errors } = getPastedPresets();
+        const { valid, newPresets, errors } = validateAllPresets($("#paste-preset-textarea").val());
         $(this).toggleClass("border-success", valid);
         $(this).toggleClass("border-danger", !valid && $(this).val().length > 0);
         updateOverwriteCheckboxForNames($("#paste-preset-modal"), valid ? newPresets.map(p => p.name) : []);
     });
     $("form:has(#paste-preset-modal)").on('submit', function () {
         try {
-            handlePresetModalSubmit(this, getPastedPresets);
+            handlePresetModalSubmit(this, () => validateAllPresets($("#paste-preset-textarea").val()));
         } catch (e) {
             console.error(e);
         }
         return false;
     });
+    $("#paste-preset-modal").on("hidden.bs.modal", function () {
+        $(this).clearInputs();
+        $(this).find("#paste-preset-textarea").removeClass("border-success border-danger");
+    });
 
     $('form:has(#upload-preset-modal) [name="preset-file"]').on("change", async function () {
-        const names = await Promise.all(Array.from($(this).prop("files")).map(readFile)).then(contents => contents.map(JSON.parse).map(preset => preset.name));
-        const overwriteCheckbox = $("#upload-preset-overwrite-checkbox");
-        overwriteCheckbox.prop("checked", false);
-        const existingNames = names.filter(name => presets.get(name));
-        overwriteCheckbox.parent().toggleClass("invisible", existingNames.length == 0);
-        $("label[for='upload-preset-overwrite-checkbox'] span").text(`"${existingNames.join('", "')}"`);
+        const { valid, newPresets, errors } = validateAllPresets(await Promise.all(Array.from($(this).prop("files")).map(readFile)));
+        $(this).toggleClass("border-success", valid);
+        $(this).toggleClass("border-danger", !valid && $(this).val().length > 0);
+        updateOverwriteCheckboxForNames($("#paste-preset-modal"), valid ? newPresets.map(p => p.name) : []);
     });
     $('form:has(#upload-preset-modal)').on('submit', function () {
-        // File reading is async but we need to return false immediately to prevent form submission, so we have an inner async wrapper
-        (async () => {
-            // Read files
-            const files = Array.from($(this).find("[name='preset-file']").prop("files"));
-            const newPresets = await Promise.all(files.map(readFile)).then(contents => contents.map(JSON.parse));
-
-            // Create presets, handling duplicate names
-            for (const preset of newPresets) {
-                if (!$(this).find("#upload-preset-overwrite-checkbox").prop("checked")) {
-                    while (presets.get(preset.name)) {
-                        const regex = / \((\d+)\)$/;
-                        const match = regex.exec(preset.name);
-                        const copyNum = match ? parseInt(match[1]) + 1 : 2;
-                        preset.name = `${preset.name.replace(regex, "")} (${copyNum})`;
-                    }
-                }
-                presets.set(preset);
-            }
-
-            $(this).clearInputs();
-            $('#generator-preset-select').val(newPresets[newPresets.length - 1].name).selectpicker("refresh").trigger("change"); // Set to last imported preset
-
-            $('#upload-preset-modal').popoverX('hide');
-        })();
+        try {
+            // File reading is async but we need to return false immediately to prevent form submission, so we have an inner async wrapper
+            (async () => {
+                const presetTexts = await Promise.all(Array.from($(this).find("[name='preset-file']").prop("files")).map(readFile));
+                handlePresetModalSubmit(this, () => validateAllPresets(presetTexts));
+            })();
+        } catch (e) {
+            console.error(e);
+        }
         return false;
+    });
+    $("#upload-preset-modal").on("hidden.bs.modal", function () {
+        $(this).clearInputs();
+        $(this).find("[name='preset-file']").removeClass("border-success border-danger");
     });
 });

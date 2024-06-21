@@ -185,3 +185,14 @@ function readFile(file) {
         reader.readAsText(file);
     });
 }
+
+
+/**
+ * A replacer to be passed to JSON.stringify to replace errors with their string representation
+ */
+function errorJSONreplacer(key, value) {
+    if (value instanceof Error) {
+        return Object.fromEntries(Object.getOwnPropertyNames(value).map(propName => [propName, value[propName]]));
+    }
+    return value;
+}
